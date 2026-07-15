@@ -1,0 +1,501 @@
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import { useParams, useRouter } from "next/navigation";
+import {
+  ArrowLeft,
+  MapPin,
+  Clock,
+  Plus,
+  GripVertical,
+  Share2,
+  Trash2,
+  Map,
+  List,
+  Sparkles,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { useAuth } from "@/components/auth/auth-provider";
+import {
+  getDocument,
+  getCollection,
+  addDocument,
+  updateDocument,
+  deleteDocument,
+  where,
+  orderBy,
+} from "@/lib/firebase/firestore";
+import { gerarSlug } from "@/lib/utils/gerar-slug";
+import { formatarDataCurta } from "@/lib/utils/formatar-data";
+import { TIPO_PARADA_LABELS, CORES_TIPO_PARADA } from "@/lib/constants";
+import type { Roteiro, Dia, Parada, ParadaFormData, TipoParada } from "@/lib/types/roteiro";
+import { toast } from "sonner";
+
+export default function RoteiroEditorPage() {
+  const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
+  const router = useRouter();
+
+  const [roteiro, setRoteiro] = useState<Roteiro | null>(null);
+  const [dias, setDias] = useState<Dia[]>([]);
+  const [paradas, setParadas] = useState<Record<string, Parada[]>>({});
+  const [loading, setLoading] = useState(true);
+  const [mapaAtivo, setMapaAtivo] = useState(false);
+
+  // Add stop modal
+  const [modalAberto, setModalAberto] = useState(false);
+  const [diaSelecionado, setDiaSelecionado] = useState<string | null>(null);
+  const [paradaForm, setParadaForm] = useState<ParadaFormData>({
+    placeId: "",
+    nome: "",
+    endereco: "",
+    lat: 0,
+    lng: 0,
+    tipo: "atracao",
+    horarioInicio: "",
+    horarioFim: "",
+    notas: "",
+  });
+
+  // AI assistente
+  const [aiAberto, setAiAberto] = useState(false);
+  const [aiQuery, setAiQuery] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiResultados, setAiResultados] = useState<any[]>([]);
+
+  const carregarDados = useCallback(async () => {
+    if (!user) return;
+    try {
+      const r = await getDocument<Roteiro>("roteiros", id);
+      if (!r || r.donoId !== user.uid) {
+        router.push("/app");
+        return;
+      }
+      setRoteiro(r);
+
+      const d = await getCollection<Dia>(
+        `roteiros/${id}/dias`,
+        orderBy("ordem", "asc")
+      );
+      setDias(d);
+
+      const pMap: Record<string, Parada[]> = {};
+      for (const dia of d) {
+        const p = await getCollection<Parada>(
+          `roteiros/${id}/dias/${dia.id}/paradas`,
+          orderBy("ordem", "asc")
+        );
+        pMap[dia.id] = p;
+      }
+      setParadas(pMap);
+    } catch (err) {
+      console.error("Erro ao carregar roteiro:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [id, user, router]);
+
+  useEffect(() => {
+    carregarDados();
+  }, [carregarDados]);
+
+  async function adicionarParada() {
+    if (!diaSelecionado || !paradaForm.nome) return;
+    const paradasDoDia = paradas[diaSelecionado] || [];
+    const novaOrdem = paradasDoDia.length;
+
+    await addDocument(
+      `roteiros/${id}/dias/${diaSelecionado}/paradas`,
+      {
+        placeId: paradaForm.placeId,
+        nome: paradaForm.nome,
+        endereco: paradaForm.endereco,
+        localizacao: { lat: paradaForm.lat, lng: paradaForm.lng } as any,
+        tipo: paradaForm.tipo,
+        horarioInicio: paradaForm.horarioInicio || null,
+        horarioFim: paradaForm.horarioFim || null,
+        notas: paradaForm.notas,
+        ordem: novaOrdem,
+      }
+    );
+
+    setParadaForm({
+      placeId: "",
+      nome: "",
+      endereco: "",
+      lat: 0,
+      lng: 0,
+      tipo: "atracao",
+      horarioInicio: "",
+      horarioFim: "",
+      notas: "",
+    });
+    setModalAberto(false);
+    await carregarDados();
+    toast.success("Parada adicionada!");
+  }
+
+  async function removerParada(diaId: string, paradaId: string) {
+    await deleteDocument(`roteiros/${id}/dias/${diaId}/paradas/${paradaId}`);
+    await carregarDados();
+    toast.success("Parada removida");
+  }
+
+  async function compartilhar() {
+    if (!roteiro) return;
+    const slug = gerarSlug();
+    await updateDocument(`roteiros/${id}`, {
+      slugCompartilhamento: slug,
+      compartilhamentoAtivo: true,
+    });
+    const url = `${window.location.origin}/compartilhar/${slug}`;
+    await navigator.clipboard.writeText(url);
+    setRoteiro({ ...roteiro, slugCompartilhamento: slug, compartilhamentoAtivo: true });
+    toast.success("Link copiado para a área de transferência!");
+  }
+
+  async function desativarCompartilhamento() {
+    if (!roteiro) return;
+    await updateDocument(`roteiros/${id}`, {
+      slugCompartilhamento: null,
+      compartilhamentoAtivo: false,
+    });
+    setRoteiro({ ...roteiro, slugCompartilhamento: null, compartilhamentoAtivo: false });
+    toast.success("Compartilhamento desativado");
+  }
+
+  async function pesquisarComIA() {
+    if (!aiQuery.trim()) return;
+    setAiLoading(true);
+    try {
+      const res = await fetch("/api/ai/pesquisar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: aiQuery, destino: roteiro?.destino }),
+      });
+      const data = await res.json();
+      setAiResultados(data.lugares || []);
+    } catch (err) {
+      toast.error("Erro ao pesquisar com IA");
+    } finally {
+      setAiLoading(false);
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="p-6 max-w-4xl mx-auto">
+        <Skeleton className="h-8 w-48 mb-4" />
+        <Skeleton className="h-64 w-full rounded-xl" />
+      </div>
+    );
+  }
+
+  if (!roteiro) return null;
+
+  return (
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-3 border-b bg-background">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => router.push("/app")}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+          <div>
+            <h1 className="font-semibold truncate max-w-[200px] sm:max-w-xs">
+              {roteiro.titulo}
+            </h1>
+            <p className="text-xs text-muted-foreground">{roteiro.destino}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant={mapaAtivo ? "default" : "outline"}
+            size="sm"
+            onClick={() => setMapaAtivo(!mapaAtivo)}
+            className="hidden sm:flex"
+          >
+            {mapaAtivo ? (
+              <List className="h-4 w-4 mr-1" />
+            ) : (
+              <Map className="h-4 w-4 mr-1" />
+            )}
+            {mapaAtivo ? "Lista" : "Mapa"}
+          </Button>
+          <Sheet open={aiAberto} onOpenChange={setAiAberto}>
+            <SheetTrigger className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-3 py-2">
+              <Sparkles className="h-4 w-4" />
+              IA
+            </SheetTrigger>
+            <SheetContent side="right" className="w-full sm:w-96">
+              <SheetHeader>
+                <SheetTitle>Assistente de Viagem</SheetTitle>
+              </SheetHeader>
+              <div className="mt-6 space-y-4">
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Ex: melhores restaurantes..."
+                    value={aiQuery}
+                    onChange={(e) => setAiQuery(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && pesquisarComIA()}
+                  />
+                  <Button onClick={pesquisarComIA} disabled={aiLoading}>
+                    {aiLoading ? "..." : "Pesquisar"}
+                  </Button>
+                </div>
+                <div className="space-y-3">
+                  {aiResultados.map((lugar: any, i: number) => (
+                    <div
+                      key={i}
+                      className="p-3 rounded-lg border hover:border-primary/50 cursor-pointer transition-colors"
+                      onClick={() => {
+                        setParadaForm({
+                          placeId: "",
+                          nome: lugar.nome,
+                          endereco: lugar.endereco || "",
+                          lat: 0,
+                          lng: 0,
+                          tipo: lugar.tipo || "atracao",
+                          horarioInicio: "",
+                          horarioFim: "",
+                          notas: lugar.porQue || "",
+                        });
+                        setAiAberto(false);
+                        setModalAberto(true);
+                      }}
+                    >
+                      <div className="flex items-start justify-between">
+                        <p className="font-medium text-sm">{lugar.nome}</p>
+                        <Badge variant="secondary" className="text-xs">
+                          {TIPO_PARADA_LABELS[lugar.tipo] || "Atração"}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {lugar.descricao}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
+          {roteiro.compartilhamentoAtivo ? (
+            <Button variant="secondary" size="sm" onClick={desativarCompartilhamento}>
+              <Share2 className="h-4 w-4 mr-1" />
+              Desativar
+            </Button>
+          ) : (
+            <Button size="sm" onClick={compartilhar}>
+              <Share2 className="h-4 w-4 mr-1" />
+              Compartilhar
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 overflow-auto p-4">
+        <div className="max-w-2xl mx-auto space-y-6">
+          {dias.map((dia) => {
+            const paradasDoDia = paradas[dia.id] || [];
+            return (
+              <div key={dia.id} className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-sm">
+                    Dia {dia.numeroDia} - {formatarDataCurta(dia.data.toDate())}
+                  </h3>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setDiaSelecionado(dia.id);
+                      setModalAberto(true);
+                    }}
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Adicionar
+                  </Button>
+                </div>
+
+                {paradasDoDia.length === 0 ? (
+                  <div className="border border-dashed rounded-lg p-6 text-center text-sm text-muted-foreground">
+                    Nenhuma parada neste dia. Clique em &quot;Adicionar&quot; para
+                    começar.
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {paradasDoDia.map((parada, idx) => (
+                      <div
+                        key={parada.id}
+                        className="flex items-start gap-3 p-3 rounded-lg border bg-card hover:shadow-sm transition-shadow group"
+                      >
+                        <div className="flex items-center gap-2 min-w-[60px]">
+                          <GripVertical className="h-4 w-4 text-muted-foreground shrink-0 cursor-grab" />
+                          <div
+                            className="w-1.5 h-full min-h-[40px] rounded-full shrink-0"
+                            style={{
+                              backgroundColor:
+                                CORES_TIPO_PARADA[parada.tipo] || "#6b7280",
+                            }}
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="font-medium text-sm truncate">
+                              {parada.nome}
+                            </p>
+                            <Badge variant="outline" className="text-xs shrink-0">
+                              {TIPO_PARADA_LABELS[parada.tipo]}
+                            </Badge>
+                          </div>
+                          {parada.endereco && (
+                            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                              <MapPin className="h-3 w-3" />
+                              {parada.endereco}
+                            </p>
+                          )}
+                          <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                            {(parada.horarioInicio || parada.horarioFim) && (
+                              <span className="flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                {parada.horarioInicio || "?"} -{" "}
+                                {parada.horarioFim || "?"}
+                              </span>
+                            )}
+                          </div>
+                          {parada.notas && (
+                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                              {parada.notas}
+                            </p>
+                          )}
+                        </div>
+                        <button
+                          className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive shrink-0"
+                          onClick={() => removerParada(dia.id, parada.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Add stop dialog */}
+      <Dialog open={modalAberto} onOpenChange={setModalAberto}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Adicionar Parada</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Nome do lugar</Label>
+              <Input
+                placeholder="Ex: Jardim Botânico"
+                value={paradaForm.nome}
+                onChange={(e) =>
+                  setParadaForm({ ...paradaForm, nome: e.target.value })
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Endereço</Label>
+              <Input
+                placeholder="Ex: Rua das Flores, 123"
+                value={paradaForm.endereco}
+                onChange={(e) =>
+                  setParadaForm({ ...paradaForm, endereco: e.target.value })
+                }
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Horário início</Label>
+                <Input
+                  type="time"
+                  value={paradaForm.horarioInicio}
+                  onChange={(e) =>
+                    setParadaForm({
+                      ...paradaForm,
+                      horarioInicio: e.target.value,
+                    })
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Horário fim</Label>
+                <Input
+                  type="time"
+                  value={paradaForm.horarioFim}
+                  onChange={(e) =>
+                    setParadaForm({
+                      ...paradaForm,
+                      horarioFim: e.target.value,
+                    })
+                  }
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Tipo</Label>
+              <div className="flex flex-wrap gap-2">
+                {(
+                  Object.entries(TIPO_PARADA_LABELS) as [TipoParada, string][]
+                ).map(([tipo, label]) => (
+                  <Badge
+                    key={tipo}
+                    variant={paradaForm.tipo === tipo ? "default" : "outline"}
+                    className="cursor-pointer"
+                    onClick={() => setParadaForm({ ...paradaForm, tipo })}
+                  >
+                    {label}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Notas</Label>
+              <Textarea
+                placeholder="Alguma observação..."
+                value={paradaForm.notas}
+                onChange={(e) =>
+                  setParadaForm({ ...paradaForm, notas: e.target.value })
+                }
+                rows={2}
+              />
+            </div>
+            <Button className="w-full" onClick={adicionarParada}>
+              Adicionar Parada
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
