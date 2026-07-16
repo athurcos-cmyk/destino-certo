@@ -44,18 +44,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const loginGoogle = async () => {
-    const u = await signInWithGoogle();
-    setUser(u);
+    try {
+      const u = await signInWithGoogle();
+      setUser(u);
+    } catch (err: any) {
+      if (err?.code === "auth/popup-blocked") {
+        throw new Error("Popup bloqueado. Permita popups para fazer login com Google.");
+      }
+      throw err;
+    }
   };
 
   const loginAnonimo = async () => {
-    const u = await signInAnonymously();
-    setUser(u);
+    try {
+      const u = await signInAnonymously();
+      setUser(u);
+    } catch {
+      throw new Error("Erro ao entrar anonimamente. Verifique sua conexão.");
+    }
   };
 
   const logout = async () => {
-    await signOut();
-    setUser(null);
+    try {
+      await signOut();
+      setUser(null);
+    } catch {
+      // Even if Firebase signOut fails, clear local state
+      setUser(null);
+    }
   };
 
   return (

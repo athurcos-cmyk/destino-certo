@@ -1,0 +1,47 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(roteiroId) {
+      return isSignedIn()
+        && get(/databases/$(database)/documents/roteiros/$(roteiroId)).data.donoId == request.auth.uid;
+    }
+
+    // Roteiros
+    match /roteiros/{roteiroId} {
+      // Owner can read. Public sharing allows anyone to read.
+      allow read: if isOwner(roteiroId)
+        || resource.data.compartilhamentoAtivo == true;
+
+      // Signed-in users can create (must set own UID as donoId)
+      allow create: if isSignedIn()
+        && request.resource.data.donoId == request.auth.uid;
+
+      // Only owner can update/delete
+      allow update, delete: if isOwner(roteiroId);
+    }
+
+    // Dias - inherit from parent roteiro
+    match /roteiros/{roteiroId}/dias/{diaId} {
+      allow read: if isOwner(roteiroId)
+        || get(/databases/$(database)/documents/roteiros/$(roteiroId)).data.compartilhamentoAtivo == true;
+      allow create, update, delete: if isOwner(roteiroId);
+    }
+
+    // Paradas - inherit from parent roteiro via dia
+    match /roteiros/{roteiroId}/dias/{diaId}/paradas/{paradaId} {
+      allow read: if isOwner(roteiroId)
+        || get(/databases/$(database)/documents/roteiros/$(roteiroId)).data.compartilhamentoAtivo == true;
+      allow create, update, delete: if isOwner(roteiroId);
+    }
+
+    // Usuarios - users can read/write only their own
+    match /usuarios/{uid} {
+      allow read, write: if isSignedIn() && request.auth.uid == uid;
+    }
+  }
+}

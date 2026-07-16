@@ -1,16 +1,12 @@
-const CACHE_NAME = "destino-certo-v1";
+const CACHE_NAME = "destino-certo-v2";
 
-const ASSETS = [
-  "/",
-  "/login",
-  "/app",
-  "/manifest.webmanifest",
-  "/icons/icon.svg",
+const STATIC_ASSETS = [
+  "/icons/Icon.png",
 ];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
   );
   self.skipWaiting();
 });
@@ -27,19 +23,55 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
 
-  event.respondWith(
-    caches.match(event.request).then((cached) => {
-      const fetched = fetch(event.request).then((response) => {
-        if (response.ok) {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) =>
-            cache.put(event.request, clone)
-          );
-        }
-        return response;
-      });
+  const url = new URL(event.request.url);
 
-      return cached || fetched;
-    })
+  // Only cache static assets (icons, fonts, images). Never cache API or data.
+  if (
+    url.pathname.startsWith("/icons/") ||
+    url.pathname.startsWith("/fonts/") ||
+    url.pathname.startsWith("/_next/static/")
+  ) {
+    event.respondWith(
+      caches.match(event.request).then((cached) => {
+        const fetched = fetch(event.request).then((response) => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) =>
+              cache.put(event.request, clone)
+            );
+          }
+          return response;
+        }).catch(() => cached);
+        return cached || fetched;
+      })
+    );
+    return;
+  }
+
+  // Network-first for HTML pages (always get latest)
+  if (
+    event.request.mode === "navigate" ||
+    event.request.headers.get("accept")?.includes("text/html")
+  ) {
+    event.respondWith(
+      fetch(event.request).catch(() =>
+        caches.match(event.request).then((cached) => cached || Response.error())
+      )
+    );
+    return;
+  }
+
+  // Default: network-first for everything else
+  event.respondWith(
+    fetch(event.request).catch(() =>
+      caches.match(event.request).then((cached) => cached || Response.error())
+    )
   );
+});
+
+// Notify clients when a new SW is waiting
+self.addEventListener("message", (event) => {
+  if (event.data === "skipWaiting") {
+    self.skipWaiting();
+  }
 });

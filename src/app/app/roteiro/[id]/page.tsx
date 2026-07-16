@@ -11,6 +11,8 @@ import {
   Trash2,
   Map,
   List,
+  AlertCircle,
+  RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -67,6 +69,7 @@ export default function RoteiroEditorPage() {
   const [dias, setDias] = useState<Dia[]>([]);
   const [paradas, setParadas] = useState<Record<string, Parada[]>>({});
   const [loading, setLoading] = useState(true);
+  const [erro, setErro] = useState<string | null>(null);
   const [mapaAtivo, setMapaAtivo] = useState(false);
 
   // Add stop modal
@@ -117,6 +120,7 @@ export default function RoteiroEditorPage() {
       setParadas(pMap);
     } catch (err) {
       console.error("Erro ao carregar roteiro:", err);
+      setErro("Não foi possível carregar o roteiro.");
     } finally {
       setLoading(false);
     }
@@ -183,13 +187,14 @@ export default function RoteiroEditorPage() {
     setModalAberto(false);
   }
 
-  function editarParada(parada: Parada) {
+  function editarParada(diaId: string, parada: Parada) {
+    setDiaSelecionado(diaId);
     setParadaForm({
       placeId: parada.placeId,
       nome: parada.nome,
       endereco: parada.endereco,
-      lat: parada.localizacao.lat,
-      lng: parada.localizacao.lng,
+      lat: parada.localizacao?.lat ?? 0,
+      lng: parada.localizacao?.lng ?? 0,
       tipo: parada.tipo,
       horarioInicio: parada.horarioInicio || "",
       horarioFim: parada.horarioFim || "",
@@ -242,9 +247,13 @@ export default function RoteiroEditorPage() {
       compartilhamentoAtivo: true,
     });
     const url = `${window.location.origin}/compartilhar/${slug}`;
-    await navigator.clipboard.writeText(url);
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("Link copiado!");
+    } catch {
+      toast.error("Não foi possível copiar. Link: " + url);
+    }
     setRoteiro({ ...roteiro, slugCompartilhamento: slug, compartilhamentoAtivo: true });
-    toast.success("Link copiado para a área de transferência!");
   }
 
   async function desativarCompartilhamento() {
@@ -257,11 +266,28 @@ export default function RoteiroEditorPage() {
     toast.success("Compartilhamento desativado");
   }
 
-  if (loading) {
+  if (loading && !erro) {
     return (
-      <div className="p-6 max-w-4xl mx-auto">
-        <Skeleton className="h-8 w-48 mb-4" />
-        <Skeleton className="h-64 w-full rounded-xl" />
+      <div className="p-6 max-w-4xl mx-auto space-y-4">
+        <Skeleton className="h-8 w-48" />
+        <div className="space-y-3">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-20 w-full rounded-lg" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (erro) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
+        <AlertCircle className="h-12 w-12 text-destructive mb-4" />
+        <h2 className="font-heading text-lg font-semibold mb-2">Erro ao carregar</h2>
+        <p className="text-muted-foreground text-sm mb-4">{erro}</p>
+        <Button onClick={() => { setErro(null); carregarDados(); }}>
+          <RefreshCw className="h-4 w-4 mr-2" />Tentar novamente
+        </Button>
       </div>
     );
   }
@@ -366,7 +392,8 @@ export default function RoteiroEditorPage() {
                               key={parada.id}
                               parada={parada}
                               onEdit={editarParada}
-                              onDelete={(pid) => removerParada(dia.id, pid)}
+                              onDelete={(diaId, pid) => removerParada(diaId, pid)}
+                              diaId={dia.id}
                             />
                           ))}
                         </div>

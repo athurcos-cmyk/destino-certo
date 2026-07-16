@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { addDocument } from "@/lib/firebase/firestore";
+import { toast } from "sonner";
 import { useAuth } from "@/components/auth/auth-provider";
 import { gerarDiasEntreDatas } from "@/lib/utils/formatar-data";
 import type { RoteiroFormData } from "@/lib/types/roteiro";
@@ -28,6 +29,19 @@ export default function NovoRoteiroPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!user || saving) return;
+
+    if (form.dataFim < form.dataInicio) {
+      toast.error("A data de fim deve ser posterior à data de início.");
+      return;
+    }
+
+    const diasDiff = Math.ceil(
+      (form.dataFim.getTime() - form.dataInicio.getTime()) / (1000 * 60 * 60 * 24)
+    );
+    if (diasDiff > 60) {
+      toast.error("O roteiro não pode ter mais de 60 dias.");
+      return;
+    }
 
     setSaving(true);
     try {
@@ -58,6 +72,7 @@ export default function NovoRoteiroPage() {
       router.push(`/app/roteiro/${roteiroId}`);
     } catch (err) {
       console.error("Erro ao criar roteiro:", err);
+      toast.error("Erro ao criar roteiro. Tente novamente.");
       setSaving(false);
     }
   }
@@ -114,7 +129,7 @@ export default function NovoRoteiroPage() {
                   onChange={(e) =>
                     setForm({
                       ...form,
-                      dataInicio: new Date(e.target.value + "T00:00:00"),
+                      dataInicio: new Date(e.target.value + "T12:00:00"),
                     })
                   }
                   required
@@ -129,7 +144,7 @@ export default function NovoRoteiroPage() {
                   onChange={(e) =>
                     setForm({
                       ...form,
-                      dataFim: new Date(e.target.value + "T00:00:00"),
+                      dataFim: new Date(e.target.value + "T12:00:00"),
                     })
                   }
                   required

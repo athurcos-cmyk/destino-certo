@@ -2,18 +2,19 @@
 
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { MapPin, Clock, Trash2, Pencil, GripVertical } from "lucide-react";
+import { MapPin, Clock, Trash2, Pencil } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { TIPO_PARADA_LABELS, CORES_TIPO_PARADA } from "@/lib/constants";
 import type { Parada } from "@/lib/types/roteiro";
 
 interface ParadaSortavelProps {
   parada: Parada;
-  onEdit: (parada: Parada) => void;
-  onDelete: (paradaId: string) => void;
+  diaId: string;
+  onEdit: (diaId: string, parada: Parada) => void;
+  onDelete: (diaId: string, paradaId: string) => void;
 }
 
-export function ParadaSortavel({ parada, onEdit, onDelete }: ParadaSortavelProps) {
+export function ParadaSortavel({ parada, diaId, onEdit, onDelete }: ParadaSortavelProps) {
   const {
     attributes,
     listeners,
@@ -75,14 +76,14 @@ export function ParadaSortavel({ parada, onEdit, onDelete }: ParadaSortavelProps
       <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
         <button
           className="text-muted-foreground hover:text-primary p-1 min-w-[44px] min-h-[44px] flex items-center justify-center"
-          onClick={() => onEdit(parada)}
+          onClick={() => onEdit(diaId, parada)}
           aria-label={`Editar ${parada.nome}`}
         >
           <Pencil className="h-4 w-4" />
         </button>
         <button
           className="text-muted-foreground hover:text-destructive p-1 min-w-[44px] min-h-[44px] flex items-center justify-center"
-          onClick={() => onDelete(parada.id)}
+          onClick={() => onDelete(diaId, parada.id)}
           aria-label={`Remover ${parada.nome}`}
         >
           <Trash2 className="h-4 w-4" />
