@@ -69,9 +69,18 @@ self.addEventListener("fetch", (event) => {
   );
 });
 
-// Notify clients when a new SW is waiting
+// Notify clients when a new SW is waiting (force refresh)
 self.addEventListener("message", (event) => {
   if (event.data === "skipWaiting") {
     self.skipWaiting();
   }
+});
+
+// When a new service worker takes over, refresh all open tabs
+self.addEventListener("controllerchange", () => {
+  self.clients.matchAll({ type: "window" }).then((clients) => {
+    clients.forEach((client) => {
+      client.postMessage({ type: "SW_UPDATED" });
+    });
+  });
 });

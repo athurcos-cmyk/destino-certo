@@ -2,7 +2,7 @@ import { initializeApp, getApps, type FirebaseApp } from "firebase/app";
 import { getAuth, connectAuthEmulator, type Auth } from "firebase/auth";
 import {
   getFirestore,
-  connectFirestoreEmulator,
+  enableIndexedDbPersistence,
   type Firestore,
 } from "firebase/firestore";
 
@@ -42,9 +42,21 @@ export function getAuthInstance(): Auth {
   return _auth;
 }
 
-export function getDbInstance(): Firestore {
+export async function getDbInstance(): Promise<Firestore> {
   if (!_db) {
     _db = getFirestore(getApp());
+    if (typeof window !== "undefined") {
+      try {
+        await enableIndexedDbPersistence(_db);
+      } catch (err: any) {
+        if (err?.code === "failed-precondition") {
+          // Multiple tabs open - persistence already enabled in another tab
+          console.warn("Firestore offline: multiple tabs, persistence active elsewhere");
+        } else {
+          console.error("Firestore offline persistence error:", err);
+        }
+      }
+    }
   }
   return _db;
 }

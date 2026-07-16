@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { LoadingScreen } from "@/components/shared/loading-screen";
+import { OnlineStatus } from "@/components/shared/online-status";
 import { useAuth } from "@/components/auth/auth-provider";
 
 const navItems = [
@@ -139,6 +140,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <main className="flex-1 overflow-auto animate-in fade-in duration-200">
           {children}
         </main>
+
+        <OnlineStatus />
 
         {/* Bottom nav - mobile */}
         <nav className="md:hidden relative flex items-center justify-around h-16 border-t bg-background pb-[env(safe-area-inset-bottom,0px)]">
