@@ -25,10 +25,24 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  arrayMove,
+} from "@dnd-kit/sortable";
 import { useAuth } from "@/components/auth/auth-provider";
 import { GoogleMapsProvider } from "@/lib/google-maps/config";
 import { MapaRoteiro } from "@/components/mapa/mapa-roteiro";
 import { BuscaLugares } from "@/components/mapa/busca-lugares";
+import { ParadaSortavel } from "@/components/roteiro/parada-sortavel";
 import {
   getDocument,
   getCollection,
@@ -57,6 +71,7 @@ export default function RoteiroEditorPage() {
 
   // Add stop modal
   const [modalAberto, setModalAberto] = useState(false);
+  const [editandoParadaId, setEditandoParadaId] = useState<string | null>(null);
   const [diaSelecionado, setDiaSelecionado] = useState<string | null>(null);
   const [paradaForm, setParadaForm] = useState<ParadaFormData>({
     placeId: "",
@@ -69,6 +84,11 @@ export default function RoteiroEditorPage() {
     horarioFim: "",
     notas: "",
   });
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } })
+  );
 
   const carregarDados = useCallback(async () => {
     if (!user) return;
@@ -106,26 +126,48 @@ export default function RoteiroEditorPage() {
     carregarDados();
   }, [carregarDados]);
 
-  async function adicionarParada() {
+  async function salvarParada() {
     if (!diaSelecionado || !paradaForm.nome) return;
-    const paradasDoDia = paradas[diaSelecionado] || [];
-    const novaOrdem = paradasDoDia.length;
 
-    await addDocument(
-      `roteiros/${id}/dias/${diaSelecionado}/paradas`,
-      {
-        placeId: paradaForm.placeId,
-        nome: paradaForm.nome,
-        endereco: paradaForm.endereco,
-        localizacao: { lat: paradaForm.lat, lng: paradaForm.lng } as any,
-        tipo: paradaForm.tipo,
-        horarioInicio: paradaForm.horarioInicio || null,
-        horarioFim: paradaForm.horarioFim || null,
-        notas: paradaForm.notas,
-        ordem: novaOrdem,
-      }
-    );
+    if (editandoParadaId) {
+      await updateDocument(
+        `roteiros/${id}/dias/${diaSelecionado}/paradas/${editandoParadaId}`,
+        {
+          placeId: paradaForm.placeId,
+          nome: paradaForm.nome,
+          endereco: paradaForm.endereco,
+          localizacao: { lat: paradaForm.lat, lng: paradaForm.lng },
+          tipo: paradaForm.tipo,
+          horarioInicio: paradaForm.horarioInicio || null,
+          horarioFim: paradaForm.horarioFim || null,
+          notas: paradaForm.notas,
+        }
+      );
+      toast.success("Parada atualizada!");
+    } else {
+      const paradasDoDia = paradas[diaSelecionado] || [];
+      await addDocument(
+        `roteiros/${id}/dias/${diaSelecionado}/paradas`,
+        {
+          placeId: paradaForm.placeId,
+          nome: paradaForm.nome,
+          endereco: paradaForm.endereco,
+          localizacao: { lat: paradaForm.lat, lng: paradaForm.lng },
+          tipo: paradaForm.tipo,
+          horarioInicio: paradaForm.horarioInicio || null,
+          horarioFim: paradaForm.horarioFim || null,
+          notas: paradaForm.notas,
+          ordem: (paradas[diaSelecionado] || []).length,
+        }
+      );
+      toast.success("Parada adicionada!");
+    }
 
+    resetForm();
+    await carregarDados();
+  }
+
+  function resetForm() {
     setParadaForm({
       placeId: "",
       nome: "",
@@ -137,9 +179,53 @@ export default function RoteiroEditorPage() {
       horarioFim: "",
       notas: "",
     });
+    setEditandoParadaId(null);
     setModalAberto(false);
-    await carregarDados();
-    toast.success("Parada adicionada!");
+  }
+
+  function editarParada(parada: Parada) {
+    setParadaForm({
+      placeId: parada.placeId,
+      nome: parada.nome,
+      endereco: parada.endereco,
+      lat: parada.localizacao.lat,
+      lng: parada.localizacao.lng,
+      tipo: parada.tipo,
+      horarioInicio: parada.horarioInicio || "",
+      horarioFim: parada.horarioFim || "",
+      notas: parada.notas,
+    });
+    setEditandoParadaId(parada.id);
+    setModalAberto(true);
+  }
+
+  function abrirModalNovo(diaId: string) {
+    resetForm();
+    setDiaSelecionado(diaId);
+    setModalAberto(true);
+  }
+
+  async function handleDragEnd(diaId: string, event: any) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const paradasDoDia = [...(paradas[diaId] || [])];
+    const oldIndex = paradasDoDia.findIndex((p) => p.id === active.id);
+    const newIndex = paradasDoDia.findIndex((p) => p.id === over.id);
+    const reordered = arrayMove(paradasDoDia, oldIndex, newIndex);
+
+    setParadas((prev) => ({ ...prev, [diaId]: reordered }));
+
+    // Update ordem in Firestore
+    for (let i = 0; i < reordered.length; i++) {
+      if (reordered[i].ordem !== i) {
+        await updateDocument(
+          `roteiros/${id}/dias/${diaId}/paradas/${reordered[i].id}`,
+          { ordem: i }
+        );
+      }
+    }
+    toast.success("Ordem atualizada!");
   }
 
   async function removerParada(diaId: string, paradaId: string) {
@@ -252,10 +338,7 @@ export default function RoteiroEditorPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => {
-                        setDiaSelecionado(dia.id);
-                        setModalAberto(true);
-                      }}
+                      onClick={() => abrirModalNovo(dia.id)}
                     >
                       <Plus className="h-4 w-4 mr-1" />
                       Adicionar
@@ -268,59 +351,27 @@ export default function RoteiroEditorPage() {
                       começar.
                     </div>
                   ) : (
-                    <div className="relative pl-6 before:absolute before:left-[22px] before:top-2 before:bottom-2 before:w-px before:bg-border">
-                      {paradasDoDia.map((parada) => (
-                        <div
-                          key={parada.id}
-                          className="relative flex items-start gap-3 py-3 group"
-                        >
-                          <div
-                            className="absolute left-[-23px] top-[18px] w-3 h-3 rounded-full border-2 border-background shrink-0 z-10"
-                            style={{
-                              backgroundColor:
-                                CORES_TIPO_PARADA[parada.tipo] || "#6b7280",
-                            }}
-                          />
-                          <div className="flex-1 bg-card rounded-lg border p-3 hover:shadow-sm transition-shadow">
-                            <div className="flex items-start justify-between gap-2">
-                              <p className="font-heading font-medium text-sm truncate">
-                                {parada.nome}
-                              </p>
-                              <Badge variant="outline" className="text-[10px] shrink-0">
-                                {TIPO_PARADA_LABELS[parada.tipo]}
-                              </Badge>
-                            </div>
-                            {parada.endereco && (
-                              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                                <MapPin className="h-3 w-3 shrink-0" />
-                                <span className="truncate">{parada.endereco}</span>
-                              </p>
-                            )}
-                            <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground">
-                              {(parada.horarioInicio || parada.horarioFim) && (
-                                <span className="flex items-center gap-1 bg-muted/50 px-2 py-0.5 rounded-full">
-                                  <Clock className="h-3 w-3" />
-                                  {parada.horarioInicio || "?"} -{" "}
-                                  {parada.horarioFim || "?"}
-                                </span>
-                              )}
-                            </div>
-                            {parada.notas && (
-                              <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">
-                                {parada.notas}
-                              </p>
-                            )}
-                          </div>
-                          <button
-                            className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive shrink-0 mt-1 p-1 min-w-[44px] min-h-[44px] flex items-center justify-center"
-                            onClick={() => removerParada(dia.id, parada.id)}
-                            aria-label={`Remover ${parada.nome}`}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
+                    <DndContext
+                      sensors={sensors}
+                      collisionDetection={closestCenter}
+                      onDragEnd={(e) => handleDragEnd(dia.id, e)}
+                    >
+                      <SortableContext
+                        items={paradasDoDia.map((p) => p.id)}
+                        strategy={verticalListSortingStrategy}
+                      >
+                        <div className="relative pl-6 before:absolute before:left-[22px] before:top-2 before:bottom-2 before:w-px before:bg-border">
+                          {paradasDoDia.map((parada) => (
+                            <ParadaSortavel
+                              key={parada.id}
+                              parada={parada}
+                              onEdit={editarParada}
+                              onDelete={(pid) => removerParada(dia.id, pid)}
+                            />
+                          ))}
                         </div>
-                      ))}
-                    </div>
+                      </SortableContext>
+                    </DndContext>
                   )}
                 </div>
               );
@@ -352,7 +403,9 @@ export default function RoteiroEditorPage() {
       <Dialog open={modalAberto} onOpenChange={setModalAberto}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Adicionar Parada</DialogTitle>
+            <DialogTitle>
+              {editandoParadaId ? "Editar Parada" : "Adicionar Parada"}
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
@@ -446,9 +499,16 @@ export default function RoteiroEditorPage() {
                 rows={2}
               />
             </div>
-            <Button className="w-full" onClick={adicionarParada}>
-              Adicionar Parada
-            </Button>
+            <div className="flex gap-2">
+              <Button className="flex-1" onClick={salvarParada}>
+                {editandoParadaId ? "Salvar" : "Adicionar Parada"}
+              </Button>
+              {editandoParadaId && (
+                <Button variant="outline" onClick={resetForm}>
+                  Cancelar
+                </Button>
+              )}
+            </div>
           </div>
         </DialogContent>
       </Dialog>

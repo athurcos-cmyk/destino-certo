@@ -3,6 +3,7 @@ import { Outfit, Work_Sans } from "next/font/google";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/components/auth/auth-provider";
 import { QueryProvider } from "@/components/shared/query-provider";
+import { PwaRegister } from "@/components/shared/pwa-register";
 import { Toaster } from "sonner";
 import "./globals.css";
 
@@ -58,6 +59,7 @@ export default function RootLayout({
             <TooltipProvider>{children}</TooltipProvider>
           </AuthProvider>
         </QueryProvider>
+        <PwaRegister />
         <Toaster richColors position="bottom-center" />
       </body>
     </html>
