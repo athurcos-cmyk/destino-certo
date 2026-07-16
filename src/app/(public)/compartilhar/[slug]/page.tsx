@@ -1,6 +1,8 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MapPin, Clock, Calendar } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { getCollection, where, orderBy } from "@/lib/firebase/firestore";
 import { TIPO_PARADA_LABELS, CORES_TIPO_PARADA } from "@/lib/constants";
@@ -52,9 +54,9 @@ export default async function CompartilharPage({ params }: PageProps) {
   return (
     <div className="min-h-screen bg-muted/20">
       {/* Header */}
-      <div className="bg-primary text-primary-foreground py-8 px-4">
+      <div className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground py-10 px-4">
         <div className="max-w-2xl mx-auto">
-          <h1 className="text-2xl font-bold mb-2">{roteiro.titulo}</h1>
+          <h1 className="font-heading text-2xl font-bold mb-2">{roteiro.titulo}</h1>
           <div className="flex items-center gap-4 text-primary-foreground/80 text-sm">
             <span className="flex items-center gap-1">
               <MapPin className="h-4 w-4" />
@@ -80,7 +82,7 @@ export default async function CompartilharPage({ params }: PageProps) {
           const paradasDoDia = paradasMap[dia.id] || [];
           return (
             <div key={dia.id}>
-              <h3 className="font-semibold text-lg mb-3">
+              <h3 className="font-heading font-semibold text-lg mb-3">
                 Dia {dia.numeroDia} - {formatarDataCurta(dia.data.toDate())}
               </h3>
 
@@ -89,50 +91,50 @@ export default async function CompartilharPage({ params }: PageProps) {
                   Nenhuma parada neste dia
                 </p>
               ) : (
-                <div className="space-y-2">
-                  {paradasDoDia.map((parada, idx) => (
-                    <Card key={parada.id}>
-                      <CardContent className="p-4 flex items-start gap-3">
-                        <div className="flex items-center gap-2 min-w-[50px]">
-                          <span className="text-sm font-medium text-muted-foreground">
-                            {idx + 1}
-                          </span>
-                          <div
-                            className="w-1 h-full min-h-[40px] rounded-full"
-                            style={{
-                              backgroundColor:
-                                CORES_TIPO_PARADA[parada.tipo] || "#6b7280",
-                            }}
-                          />
-                        </div>
-                        <div className="flex-1">
+                <div className="relative pl-6 before:absolute before:left-[16px] before:top-2 before:bottom-2 before:w-px before:bg-border/60">
+                  {paradasDoDia.map((parada) => (
+                    <div
+                      key={parada.id}
+                      className="relative flex items-start gap-3 py-2.5"
+                    >
+                      <div
+                        className="absolute left-[-21px] top-[14px] w-2.5 h-2.5 rounded-full border-2 border-background shrink-0 z-10"
+                        style={{
+                          backgroundColor:
+                            CORES_TIPO_PARADA[parada.tipo] || "#6b7280",
+                        }}
+                      />
+                      <Card className="flex-1">
+                        <CardContent className="p-3">
                           <div className="flex items-start justify-between gap-2">
-                            <p className="font-medium">{parada.nome}</p>
-                            <Badge variant="outline" className="text-xs">
+                            <p className="font-heading font-medium text-sm">
+                              {parada.nome}
+                            </p>
+                            <Badge variant="outline" className="text-[10px]">
                               {TIPO_PARADA_LABELS[parada.tipo]}
                             </Badge>
                           </div>
                           {parada.endereco && (
-                            <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
                               <MapPin className="h-3 w-3" />
                               {parada.endereco}
                             </p>
                           )}
                           {(parada.horarioInicio || parada.horarioFim) && (
-                            <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
                               <Clock className="h-3 w-3" />
                               {parada.horarioInicio || "?"} -{" "}
                               {parada.horarioFim || "?"}
                             </p>
                           )}
                           {parada.notas && (
-                            <p className="text-sm text-muted-foreground mt-1">
+                            <p className="text-xs text-muted-foreground mt-1">
                               {parada.notas}
                             </p>
                           )}
-                        </div>
-                      </CardContent>
-                    </Card>
+                        </CardContent>
+                      </Card>
+                    </div>
                   ))}
                 </div>
               )}
@@ -143,10 +145,15 @@ export default async function CompartilharPage({ params }: PageProps) {
 
       {/* Footer */}
       <div className="text-center py-8 border-t bg-background">
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground mb-4">
           Roteiro criado com{" "}
-          <span className="font-semibold text-primary">Itinerario</span>
+          <span className="font-heading font-semibold text-primary">Destino Certo</span>
         </p>
+        <Link href="/login">
+          <Button variant="outline" size="sm">
+            Criar Meu Roteiro
+          </Button>
+        </Link>
       </div>
     </div>
   );

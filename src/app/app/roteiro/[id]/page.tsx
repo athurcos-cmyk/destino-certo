@@ -7,7 +7,6 @@ import {
   MapPin,
   Clock,
   Plus,
-  GripVertical,
   Share2,
   Trash2,
   Map,
@@ -322,12 +321,17 @@ export default function RoteiroEditorPage() {
             const paradasDoDia = paradas[dia.id] || [];
             return (
               <div key={dia.id} className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-sm">
-                    Dia {dia.numeroDia} - {formatarDataCurta(dia.data.toDate())}
-                  </h3>
+                <div className="flex items-center justify-between sticky top-0 bg-background/95 backdrop-blur py-2 z-10 -mx-1 px-1">
+                  <div>
+                    <h3 className="font-heading font-semibold text-base">
+                      Dia {dia.numeroDia}
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      {formatarDataCurta(dia.data.toDate())}
+                    </p>
+                  </div>
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
                     onClick={() => {
                       setDiaSelecionado(dia.id);
@@ -345,40 +349,37 @@ export default function RoteiroEditorPage() {
                     começar.
                   </div>
                 ) : (
-                  <div className="space-y-2">
-                    {paradasDoDia.map((parada, idx) => (
+                  <div className="relative pl-6 before:absolute before:left-[22px] before:top-2 before:bottom-2 before:w-px before:bg-border">
+                    {paradasDoDia.map((parada) => (
                       <div
                         key={parada.id}
-                        className="flex items-start gap-3 p-3 rounded-lg border bg-card hover:shadow-sm transition-shadow group"
+                        className="relative flex items-start gap-3 py-3 group"
                       >
-                        <div className="flex items-center gap-2 min-w-[60px]">
-                          <GripVertical className="h-4 w-4 text-muted-foreground shrink-0 cursor-grab" />
-                          <div
-                            className="w-1.5 h-full min-h-[40px] rounded-full shrink-0"
-                            style={{
-                              backgroundColor:
-                                CORES_TIPO_PARADA[parada.tipo] || "#6b7280",
-                            }}
-                          />
-                        </div>
-                        <div className="flex-1 min-w-0">
+                        <div
+                          className="absolute left-[-23px] top-[18px] w-3 h-3 rounded-full border-2 border-background shrink-0 z-10"
+                          style={{
+                            backgroundColor:
+                              CORES_TIPO_PARADA[parada.tipo] || "#6b7280",
+                          }}
+                        />
+                        <div className="flex-1 bg-card rounded-lg border p-3 hover:shadow-sm transition-shadow">
                           <div className="flex items-start justify-between gap-2">
-                            <p className="font-medium text-sm truncate">
+                            <p className="font-heading font-medium text-sm truncate">
                               {parada.nome}
                             </p>
-                            <Badge variant="outline" className="text-xs shrink-0">
+                            <Badge variant="outline" className="text-[10px] shrink-0">
                               {TIPO_PARADA_LABELS[parada.tipo]}
                             </Badge>
                           </div>
                           {parada.endereco && (
-                            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                              <MapPin className="h-3 w-3" />
-                              {parada.endereco}
+                            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                              <MapPin className="h-3 w-3 shrink-0" />
+                              <span className="truncate">{parada.endereco}</span>
                             </p>
                           )}
-                          <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                          <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground">
                             {(parada.horarioInicio || parada.horarioFim) && (
-                              <span className="flex items-center gap-1">
+                              <span className="flex items-center gap-1 bg-muted/50 px-2 py-0.5 rounded-full">
                                 <Clock className="h-3 w-3" />
                                 {parada.horarioInicio || "?"} -{" "}
                                 {parada.horarioFim || "?"}
@@ -386,14 +387,15 @@ export default function RoteiroEditorPage() {
                             )}
                           </div>
                           {parada.notas && (
-                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                            <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">
                               {parada.notas}
                             </p>
                           )}
                         </div>
                         <button
-                          className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive shrink-0"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive shrink-0 mt-1 p-1 min-w-[44px] min-h-[44px] flex items-center justify-center"
                           onClick={() => removerParada(dia.id, parada.id)}
+                          aria-label={`Remover ${parada.nome}`}
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>

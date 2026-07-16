@@ -53,9 +53,12 @@ export default function LandingPage() {
       {/* Header */}
       <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto flex h-16 items-center justify-between px-4 max-w-6xl">
-          <Link href="/" className="flex items-center gap-2 font-bold text-xl">
-            <MapPin className="h-6 w-6 text-primary" />
-            <span>Itinerario</span>
+          <Link
+            href="/"
+            className="flex items-center gap-2 font-heading font-bold text-xl tracking-tight"
+          >
+            <MapPin className="h-6 w-6 text-sky-500" />
+            <span>Destino Certo</span>
           </Link>
           <div className="flex items-center gap-3">
             <Link href="/login">
@@ -64,15 +67,23 @@ export default function LandingPage() {
               </Button>
             </Link>
             <Link href="/login">
-              <Button size="sm">Começar</Button>
+              <Button size="sm" className="bg-cta text-cta-foreground hover:bg-cta/90">
+                Começar
+              </Button>
             </Link>
           </div>
         </div>
       </header>
 
       <main className="flex-1">
-        {/* Hero */}
-        <section className="py-20 md:py-28 px-4">
+        {/* Hero com Aurora gradient */}
+        <section className="relative overflow-hidden py-24 md:py-36 px-4">
+          <div className="absolute inset-0 -z-10" aria-hidden="true">
+            <div className="absolute top-0 -left-40 w-[600px] h-[600px] rounded-full bg-gradient-to-br from-sky-300/40 via-sky-200/20 to-transparent blur-3xl animate-[aurora_12s_ease-in-out_infinite]" />
+            <div className="absolute bottom-0 -right-40 w-[500px] h-[500px] rounded-full bg-gradient-to-tl from-orange-300/25 via-amber-200/15 to-transparent blur-3xl animate-[aurora_10s_ease-in-out_infinite_reverse]" />
+            <div className="absolute top-1/2 left-1/3 w-[400px] h-[400px] rounded-full bg-gradient-to-r from-emerald-300/20 via-teal-200/10 to-transparent blur-3xl animate-[aurora_14s_ease-in-out_infinite]" />
+          </div>
+
           <div className="container mx-auto max-w-6xl text-center">
             <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6">
               Seu roteiro de viagem
@@ -85,12 +96,19 @@ export default function LandingPage() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/login">
-                <Button size="lg" className="text-base px-8">
+                <Button
+                  size="lg"
+                  className="text-base px-8 bg-cta text-cta-foreground hover:bg-cta/90 shadow-lg shadow-cta/25"
+                >
                   Criar Roteiro Grátis
                 </Button>
               </Link>
               <Link href="/login">
-                <Button size="lg" variant="outline" className="text-base px-8">
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="text-base px-8"
+                >
                   Entrar com Google
                 </Button>
               </Link>
@@ -98,20 +116,20 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* Features */}
+        {/* Features com glassmorphism */}
         <section className="py-20 bg-muted/50 px-4">
           <div className="container mx-auto max-w-6xl">
             <h2 className="text-3xl font-bold text-center mb-12">
-              Por que usar o Itinerario?
+              Por que usar o Destino Certo?
             </h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
               {features.map((f) => (
                 <div
                   key={f.title}
-                  className="bg-card rounded-xl p-6 border hover:shadow-md transition-shadow"
+                  className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-sky-100 hover:shadow-lg hover:shadow-sky-100/50 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer"
                 >
-                  <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
-                    <f.icon className="h-5 w-5 text-primary" />
+                  <div className="w-10 h-10 bg-gradient-to-br from-sky-400 to-sky-500 rounded-lg flex items-center justify-center mb-4 shadow-sm shadow-sky-400/20">
+                    <f.icon className="h-5 w-5 text-white" />
                   </div>
                   <h3 className="font-semibold mb-2">{f.title}</h3>
                   <p className="text-sm text-muted-foreground">
@@ -123,7 +141,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* How it works */}
+        {/* How it works com círculos gradientes */}
         <section className="py-20 px-4">
           <div className="container mx-auto max-w-6xl">
             <h2 className="text-3xl font-bold text-center mb-12">
@@ -132,7 +150,7 @@ export default function LandingPage() {
             <div className="grid md:grid-cols-3 gap-8">
               {steps.map((s) => (
                 <div key={s.number} className="text-center">
-                  <div className="w-12 h-12 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4">
+                  <div className="w-12 h-12 bg-gradient-to-br from-sky-400 to-sky-600 text-white rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4 shadow-md shadow-sky-400/25">
                     {s.number}
                   </div>
                   <h3 className="font-semibold mb-2">{s.title}</h3>
@@ -145,20 +163,20 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* CTA */}
-        <section className="py-20 bg-primary px-4">
+        {/* CTA com gradiente */}
+        <section className="py-20 bg-gradient-to-br from-sky-500 to-sky-600 px-4">
           <div className="container mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-bold text-primary-foreground mb-4">
+            <h2 className="text-3xl font-bold text-white mb-4">
               Pronto para planejar sua próxima viagem?
             </h2>
-            <p className="text-primary-foreground/80 mb-8">
+            <p className="text-white/80 mb-8">
               Crie sua conta gratuita e comece a montar roteiros incríveis.
             </p>
             <Link href="/login">
               <Button
                 size="lg"
                 variant="secondary"
-                className="text-base px-8"
+                className="text-base px-8 bg-white text-sky-700 hover:bg-white/90 shadow-lg"
               >
                 Começar Agora
               </Button>
@@ -170,9 +188,9 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="border-t py-8 px-4">
         <div className="container mx-auto max-w-6xl flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
-          <div className="flex items-center gap-2">
-            <MapPin className="h-4 w-4" />
-            <span>Itinerario</span>
+          <div className="flex items-center gap-2 font-heading font-medium">
+            <MapPin className="h-4 w-4 text-sky-500" />
+            <span>Destino Certo</span>
           </div>
           <p>Feito para viajantes que gostam de organização.</p>
         </div>

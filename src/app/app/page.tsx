@@ -43,12 +43,22 @@ export default function DashboardPage() {
     return (
       <div className="p-6 max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-8">
-          <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-10 w-36" />
+          <div>
+            <Skeleton className="h-8 w-48 mb-2" />
+            <Skeleton className="h-4 w-24" />
+          </div>
+          <Skeleton className="h-10 w-36 rounded-lg" />
         </div>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-48 rounded-xl" />
+            <div key={i} className="rounded-xl overflow-hidden">
+              <Skeleton className="h-1.5 w-full" />
+              <div className="p-4 space-y-3">
+                <Skeleton className="h-5 w-3/4" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-2/3" />
+              </div>
+            </div>
           ))}
         </div>
       </div>
@@ -65,7 +75,7 @@ export default function DashboardPage() {
           </p>
         </div>
         <Link href="/app/roteiro/novo">
-          <Button>
+          <Button className="bg-cta text-cta-foreground hover:bg-cta/90 shadow-sm">
             <Plus className="h-4 w-4 mr-2" />
             Novo Roteiro
           </Button>
@@ -74,13 +84,17 @@ export default function DashboardPage() {
 
       {roteiros.length === 0 ? (
         <EmptyState
-          icon={<MapPin className="h-12 w-12" />}
+          icon={
+            <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
+              <MapPin className="h-10 w-10 text-primary" />
+            </div>
+          }
           titulo="Nenhum roteiro ainda"
           descricao="Crie seu primeiro roteiro de viagem e comece a planejar sua próxima aventura."
           acao={
             <Link href="/app/roteiro/novo">
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
+              <Button className="bg-cta text-cta-foreground hover:bg-cta/90" size="lg">
+                <Plus className="h-5 w-5 mr-2" />
                 Criar Primeiro Roteiro
               </Button>
             </Link>
@@ -88,42 +102,56 @@ export default function DashboardPage() {
         />
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {roteiros.map((r) => (
-            <Link key={r.id} href={`/app/roteiro/${r.id}`}>
-              <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
-                <CardContent className="p-5">
-                  <div className="flex items-start justify-between mb-3">
-                    <h3 className="font-semibold truncate flex-1 mr-2">
-                      {r.titulo}
-                    </h3>
-                    {r.compartilhamentoAtivo && (
-                      <Badge variant="secondary" className="shrink-0">
-                        <ExternalLink className="h-3 w-3 mr-1" />
-                        Compartilhado
-                      </Badge>
+          {roteiros.map((r, idx) => (
+            <div
+              key={r.id}
+              className="animate-in fade-in slide-in-from-bottom-4"
+              style={{
+                animationDelay: `${idx * 80}ms`,
+                animationFillMode: "backwards",
+              }}
+            >
+              <Link href={`/app/roteiro/${r.id}`}>
+                <Card className="group hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer h-full overflow-hidden">
+                  <div className="h-1.5 w-full bg-gradient-to-r from-primary to-cta" />
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between mb-3">
+                      <h3 className="font-heading font-semibold truncate flex-1 mr-2 text-[15px]">
+                        {r.titulo}
+                      </h3>
+                      {r.compartilhamentoAtivo && (
+                        <Badge variant="secondary" className="shrink-0 text-[10px]">
+                          <ExternalLink className="h-3 w-3 mr-1" />
+                          Compartilhado
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="space-y-2 text-[13px] text-muted-foreground">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                          <MapPin className="h-3.5 w-3.5 text-primary" />
+                        </div>
+                        <span className="truncate">{r.destino}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-full bg-cta/10 flex items-center justify-center shrink-0">
+                          <Calendar className="h-3.5 w-3.5 text-cta" />
+                        </div>
+                        <span>
+                          {formatarData(r.dataInicio.toDate())} -{" "}
+                          {formatarData(r.dataFim.toDate())}
+                        </span>
+                      </div>
+                    </div>
+                    {r.descricao && (
+                      <p className="text-[13px] text-muted-foreground mt-3 line-clamp-2 leading-relaxed">
+                        {r.descricao}
+                      </p>
                     )}
-                  </div>
-                  <div className="space-y-2 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4 shrink-0" />
-                      <span className="truncate">{r.destino}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 shrink-0" />
-                      <span>
-                        {formatarData(r.dataInicio.toDate())} -{" "}
-                        {formatarData(r.dataFim.toDate())}
-                      </span>
-                    </div>
-                  </div>
-                  {r.descricao && (
-                    <p className="text-sm text-muted-foreground mt-3 line-clamp-2">
-                      {r.descricao}
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-            </Link>
+                  </CardContent>
+                </Card>
+              </Link>
+            </div>
           ))}
         </div>
       )}
