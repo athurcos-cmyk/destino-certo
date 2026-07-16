@@ -58,15 +58,15 @@ export default function NovoRoteiroPage() {
         compartilhamentoAtivo: false,
       });
 
-      // Create days between start and end dates
+      // Fire-and-forget: create days (no await needed, Firestore syncs in background)
       const dias = gerarDiasEntreDatas(form.dataInicio, form.dataFim);
       for (let i = 0; i < dias.length; i++) {
-        await addDocument(`roteiros/${roteiroId}/dias`, {
+        addDocument(`roteiros/${roteiroId}/dias`, {
           data: dias[i],
           numeroDia: i + 1,
           notas: "",
           ordem: i,
-        });
+        }).catch((err) => console.error("Erro ao criar dia:", err));
       }
 
       router.push(`/app/roteiro/${roteiroId}`);

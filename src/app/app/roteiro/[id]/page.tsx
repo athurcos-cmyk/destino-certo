@@ -130,11 +130,11 @@ export default function RoteiroEditorPage() {
     carregarDados();
   }, [carregarDados]);
 
-  async function salvarParada() {
+  function salvarParada() {
     if (!diaSelecionado || !paradaForm.nome) return;
 
     if (editandoParadaId) {
-      await updateDocument(
+      updateDocument(
         `roteiros/${id}/dias/${diaSelecionado}/paradas/${editandoParadaId}`,
         {
           placeId: paradaForm.placeId,
@@ -146,11 +146,10 @@ export default function RoteiroEditorPage() {
           horarioFim: paradaForm.horarioFim || null,
           notas: paradaForm.notas,
         }
-      );
+      ).catch((err) => console.error("Erro ao atualizar parada:", err));
       toast.success("Parada atualizada!");
     } else {
-      const paradasDoDia = paradas[diaSelecionado] || [];
-      await addDocument(
+      addDocument(
         `roteiros/${id}/dias/${diaSelecionado}/paradas`,
         {
           placeId: paradaForm.placeId,
@@ -163,12 +162,12 @@ export default function RoteiroEditorPage() {
           notas: paradaForm.notas,
           ordem: (paradas[diaSelecionado] || []).length,
         }
-      );
+      ).catch((err) => console.error("Erro ao adicionar parada:", err));
       toast.success("Parada adicionada!");
     }
 
     resetForm();
-    await carregarDados();
+    carregarDados().catch(() => {});
   }
 
   function resetForm() {
@@ -221,38 +220,37 @@ export default function RoteiroEditorPage() {
 
     setParadas((prev) => ({ ...prev, [diaId]: reordered }));
 
-    // Update ordem in Firestore
+    // Fire-and-forget: update ordem in Firestore
     for (let i = 0; i < reordered.length; i++) {
       if (reordered[i].ordem !== i) {
-        await updateDocument(
+        updateDocument(
           `roteiros/${id}/dias/${diaId}/paradas/${reordered[i].id}`,
           { ordem: i }
-        );
+        ).catch((err) => console.error("Erro ao reordenar:", err));
       }
     }
     toast.success("Ordem atualizada!");
   }
 
-  async function removerParada(diaId: string, paradaId: string) {
-    await deleteDocument(`roteiros/${id}/dias/${diaId}/paradas/${paradaId}`);
-    await carregarDados();
+  function removerParada(diaId: string, paradaId: string) {
+    deleteDocument(`roteiros/${id}/dias/${diaId}/paradas/${paradaId}`)
+      .catch((err) => console.error("Erro ao remover parada:", err));
+    carregarDados().catch(() => {});
     toast.success("Parada removida");
   }
 
-  async function compartilhar() {
+  function compartilhar() {
     if (!roteiro) return;
     const slug = gerarSlug();
-    await updateDocument(`roteiros/${id}`, {
+    updateDocument(`roteiros/${id}`, {
       slugCompartilhamento: slug,
       compartilhamentoAtivo: true,
-    });
+    }).catch((err) => console.error("Erro ao compartilhar:", err));
     const url = `${window.location.origin}/compartilhar/${slug}`;
-    try {
-      await navigator.clipboard.writeText(url);
-      toast.success("Link copiado!");
-    } catch {
-      toast.error("Não foi possível copiar. Link: " + url);
-    }
+    navigator.clipboard.writeText(url).then(
+      () => toast.success("Link copiado!"),
+      () => toast.error("Não foi possível copiar. Link: " + url)
+    );
     setRoteiro({ ...roteiro, slugCompartilhamento: slug, compartilhamentoAtivo: true });
   }
 
