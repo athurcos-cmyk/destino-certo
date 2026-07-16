@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { LoadingScreen } from "@/components/shared/loading-screen";
 import { OnlineStatus } from "@/components/shared/online-status";
+import { SyncProvider } from "@/components/shared/sync-provider";
 import { useAuth } from "@/components/auth/auth-provider";
 
 const navItems = [
@@ -47,6 +48,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     : user.email?.slice(0, 2).toUpperCase() || "?";
 
   return (
+    <SyncProvider>
     <div className="flex h-screen overflow-hidden">
       {/* Sidebar - desktop */}
       <aside className="hidden md:flex w-64 flex-col border-r bg-muted/40">
@@ -187,5 +189,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </nav>
       </div>
     </div>
+    </SyncProvider>
   );
 }

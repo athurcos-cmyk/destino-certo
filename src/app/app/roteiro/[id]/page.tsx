@@ -412,12 +412,19 @@ export default function RoteiroEditorPage() {
             <MapaRoteiro
               paradas={todasParadas}
               onMapClick={(lat, lng) => {
+                if (!diaSelecionado && dias.length > 0) {
+                  setDiaSelecionado(dias[0].id);
+                }
                 setParadaForm({
-                  ...paradaForm,
-                  lat,
-                  lng,
+                  placeId: "",
                   nome: "",
                   endereco: "",
+                  lat,
+                  lng,
+                  tipo: "atracao",
+                  horarioInicio: "",
+                  horarioFim: "",
+                  notas: "",
                 });
                 setModalAberto(true);
               }}

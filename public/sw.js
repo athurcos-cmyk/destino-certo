@@ -75,12 +75,3 @@ self.addEventListener("message", (event) => {
     self.skipWaiting();
   }
 });
-
-// When a new service worker takes over, refresh all open tabs
-self.addEventListener("controllerchange", () => {
-  self.clients.matchAll({ type: "window" }).then((clients) => {
-    clients.forEach((client) => {
-      client.postMessage({ type: "SW_UPDATED" });
-    });
-  });
-});
