@@ -1,15 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import { Plus, MapPin, Calendar, ExternalLink } from "lucide-react";
+import { Plus, MapPin, Calendar, ExternalLink, AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/empty-state";
 import { useAuth } from "@/components/auth/auth-provider";
-import { getCollection, where, orderBy, Timestamp } from "@/lib/firebase/firestore";
+import { getCollection, where } from "@/lib/firebase/firestore";
 import type { Roteiro } from "@/lib/types/roteiro";
 import { formatarData } from "@/lib/utils/formatar-data";
 
@@ -17,29 +17,39 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const [roteiros, setRoteiros] = useState<Roteiro[]>([]);
   const [loading, setLoading] = useState(true);
+  const [erro, setErro] = useState<string | null>(null);
 
-  useEffect(() => {
+  const carregar = useCallback(async () => {
     if (!user) return;
-
-    async function carregar() {
-      try {
-        const data = await getCollection<Roteiro>(
-          "roteiros",
-          where("donoId", "==", user!.uid),
-          orderBy("atualizadoEm", "desc")
-        );
-        setRoteiros(data);
-      } catch (err) {
-        console.error("Erro ao carregar roteiros:", err);
-      } finally {
-        setLoading(false);
-      }
+    setLoading(true);
+    setErro(null);
+    try {
+      const data = await getCollection<Roteiro>(
+        "roteiros",
+        where("donoId", "==", user.uid)
+      );
+      // Sort client-side to avoid composite index requirement
+      data.sort((a, b) => {
+        const aTime = a.atualizadoEm?.toMillis?.() ?? 0;
+        const bTime = b.atualizadoEm?.toMillis?.() ?? 0;
+        return bTime - aTime;
+      });
+      setRoteiros(data);
+    } catch (err: any) {
+      console.error("Erro ao carregar roteiros:", err);
+      setErro(
+        err?.message || "Erro ao carregar roteiros. Tente novamente."
+      );
+    } finally {
+      setLoading(false);
     }
-
-    carregar();
   }, [user]);
 
-  if (loading) {
+  useEffect(() => {
+    carregar();
+  }, [carregar]);
+
+  if (loading && roteiros.length === 0) {
     return (
       <div className="p-6 max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-8">
@@ -60,6 +70,31 @@ export default function DashboardPage() {
               </div>
             </div>
           ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (erro) {
+    return (
+      <div className="p-6 max-w-4xl mx-auto">
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
+            <AlertCircle className="h-8 w-8 text-destructive" />
+          </div>
+          <h2 className="font-heading text-lg font-semibold mb-2">
+            Erro ao carregar roteiros
+          </h2>
+          <p className="text-muted-foreground text-sm max-w-md mb-6">
+            {erro}
+          </p>
+          <button
+            onClick={carregar}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Tentar novamente
+          </button>
         </div>
       </div>
     );

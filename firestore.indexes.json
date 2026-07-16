@@ -1,0 +1,26 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "roteiros",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "donoId", "order": "ASCENDING" },
+        { "fieldPath": "atualizadoEm", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "dias",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "ordem", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "paradas",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "ordem", "order": "ASCENDING" }
+      ]
+    }
+  ]
+}
