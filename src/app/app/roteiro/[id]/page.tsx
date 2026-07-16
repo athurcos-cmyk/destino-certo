@@ -11,7 +11,6 @@ import {
   Trash2,
   Map,
   List,
-  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,13 +25,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
 import { useAuth } from "@/components/auth/auth-provider";
 import {
   getDocument,
@@ -74,12 +66,6 @@ export default function RoteiroEditorPage() {
     horarioFim: "",
     notas: "",
   });
-
-  // AI assistente
-  const [aiAberto, setAiAberto] = useState(false);
-  const [aiQuery, setAiQuery] = useState("");
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiResultados, setAiResultados] = useState<any[]>([]);
 
   const carregarDados = useCallback(async () => {
     if (!user) return;
@@ -182,24 +168,6 @@ export default function RoteiroEditorPage() {
     toast.success("Compartilhamento desativado");
   }
 
-  async function pesquisarComIA() {
-    if (!aiQuery.trim()) return;
-    setAiLoading(true);
-    try {
-      const res = await fetch("/api/ai/pesquisar", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: aiQuery, destino: roteiro?.destino }),
-      });
-      const data = await res.json();
-      setAiResultados(data.lugares || []);
-    } catch (err) {
-      toast.error("Erro ao pesquisar com IA");
-    } finally {
-      setAiLoading(false);
-    }
-  }
-
   if (loading) {
     return (
       <div className="p-6 max-w-4xl mx-auto">
@@ -243,63 +211,6 @@ export default function RoteiroEditorPage() {
             )}
             {mapaAtivo ? "Lista" : "Mapa"}
           </Button>
-          <Sheet open={aiAberto} onOpenChange={setAiAberto}>
-            <SheetTrigger className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-3 py-2">
-              <Sparkles className="h-4 w-4" />
-              IA
-            </SheetTrigger>
-            <SheetContent side="right" className="w-full sm:w-96">
-              <SheetHeader>
-                <SheetTitle>Assistente de Viagem</SheetTitle>
-              </SheetHeader>
-              <div className="mt-6 space-y-4">
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Ex: melhores restaurantes..."
-                    value={aiQuery}
-                    onChange={(e) => setAiQuery(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && pesquisarComIA()}
-                  />
-                  <Button onClick={pesquisarComIA} disabled={aiLoading}>
-                    {aiLoading ? "..." : "Pesquisar"}
-                  </Button>
-                </div>
-                <div className="space-y-3">
-                  {aiResultados.map((lugar: any, i: number) => (
-                    <div
-                      key={i}
-                      className="p-3 rounded-lg border hover:border-primary/50 cursor-pointer transition-colors"
-                      onClick={() => {
-                        setParadaForm({
-                          placeId: "",
-                          nome: lugar.nome,
-                          endereco: lugar.endereco || "",
-                          lat: 0,
-                          lng: 0,
-                          tipo: lugar.tipo || "atracao",
-                          horarioInicio: "",
-                          horarioFim: "",
-                          notas: lugar.porQue || "",
-                        });
-                        setAiAberto(false);
-                        setModalAberto(true);
-                      }}
-                    >
-                      <div className="flex items-start justify-between">
-                        <p className="font-medium text-sm">{lugar.nome}</p>
-                        <Badge variant="secondary" className="text-xs">
-                          {TIPO_PARADA_LABELS[lugar.tipo] || "Atração"}
-                        </Badge>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {lugar.descricao}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </SheetContent>
-          </Sheet>
           {roteiro.compartilhamentoAtivo ? (
             <Button variant="secondary" size="sm" onClick={desativarCompartilhamento}>
               <Share2 className="h-4 w-4 mr-1" />
