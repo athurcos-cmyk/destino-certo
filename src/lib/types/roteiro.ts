@@ -1,4 +1,4 @@
-import type { Timestamp, GeoPoint } from "firebase/firestore";
+import type { Timestamp } from "firebase/firestore";
 
 export type TipoParada =
   | "atracao"
@@ -37,7 +37,7 @@ export interface Parada {
   placeId: string;
   nome: string;
   endereco: string;
-  localizacao: GeoPoint;
+  localizacao: { lat: number; lng: number };
   tipo: TipoParada;
   horarioInicio: string | null;
   horarioFim: string | null;

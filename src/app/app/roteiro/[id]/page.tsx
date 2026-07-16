@@ -26,6 +26,9 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useAuth } from "@/components/auth/auth-provider";
+import { GoogleMapsProvider } from "@/lib/google-maps/config";
+import { MapaRoteiro } from "@/components/mapa/mapa-roteiro";
+import { BuscaLugares } from "@/components/mapa/busca-lugares";
 import {
   getDocument,
   getCollection,
@@ -179,7 +182,10 @@ export default function RoteiroEditorPage() {
 
   if (!roteiro) return null;
 
+  const todasParadas = Object.values(paradas).flat();
+
   return (
+    <GoogleMapsProvider>
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b bg-background">
@@ -202,7 +208,7 @@ export default function RoteiroEditorPage() {
             variant={mapaAtivo ? "default" : "outline"}
             size="sm"
             onClick={() => setMapaAtivo(!mapaAtivo)}
-            className="hidden sm:flex"
+            className="flex"
           >
             {mapaAtivo ? (
               <List className="h-4 w-4 mr-1" />
@@ -226,98 +232,120 @@ export default function RoteiroEditorPage() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-auto p-4">
-        <div className="max-w-2xl mx-auto space-y-6">
-          {dias.map((dia) => {
-            const paradasDoDia = paradas[dia.id] || [];
-            return (
-              <div key={dia.id} className="space-y-3">
-                <div className="flex items-center justify-between sticky top-0 bg-background/95 backdrop-blur py-2 z-10 -mx-1 px-1">
-                  <div>
-                    <h3 className="font-heading font-semibold text-base">
-                      Dia {dia.numeroDia}
-                    </h3>
-                    <p className="text-xs text-muted-foreground">
-                      {formatarDataCurta(dia.data.toDate())}
-                    </p>
+      <div className="flex-1 overflow-hidden flex flex-col md:flex-row">
+        {/* Timeline */}
+        <div className={`${mapaAtivo ? "hidden md:block md:w-1/2" : "w-full"} overflow-auto p-4 transition-all`}>
+          <div className="max-w-2xl mx-auto space-y-6">
+            {dias.map((dia) => {
+              const paradasDoDia = paradas[dia.id] || [];
+              return (
+                <div key={dia.id} className="space-y-3">
+                  <div className="flex items-center justify-between sticky top-0 bg-background/95 backdrop-blur py-2 z-10 -mx-1 px-1">
+                    <div>
+                      <h3 className="font-heading font-semibold text-base">
+                        Dia {dia.numeroDia}
+                      </h3>
+                      <p className="text-xs text-muted-foreground">
+                        {formatarDataCurta(dia.data.toDate())}
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setDiaSelecionado(dia.id);
+                        setModalAberto(true);
+                      }}
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Adicionar
+                    </Button>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setDiaSelecionado(dia.id);
-                      setModalAberto(true);
-                    }}
-                  >
-                    <Plus className="h-4 w-4 mr-1" />
-                    Adicionar
-                  </Button>
-                </div>
 
-                {paradasDoDia.length === 0 ? (
-                  <div className="border border-dashed rounded-lg p-6 text-center text-sm text-muted-foreground">
-                    Nenhuma parada neste dia. Clique em &quot;Adicionar&quot; para
-                    começar.
-                  </div>
-                ) : (
-                  <div className="relative pl-6 before:absolute before:left-[22px] before:top-2 before:bottom-2 before:w-px before:bg-border">
-                    {paradasDoDia.map((parada) => (
-                      <div
-                        key={parada.id}
-                        className="relative flex items-start gap-3 py-3 group"
-                      >
+                  {paradasDoDia.length === 0 ? (
+                    <div className="border border-dashed rounded-lg p-6 text-center text-sm text-muted-foreground">
+                      Nenhuma parada neste dia. Clique em &quot;Adicionar&quot; para
+                      começar.
+                    </div>
+                  ) : (
+                    <div className="relative pl-6 before:absolute before:left-[22px] before:top-2 before:bottom-2 before:w-px before:bg-border">
+                      {paradasDoDia.map((parada) => (
                         <div
-                          className="absolute left-[-23px] top-[18px] w-3 h-3 rounded-full border-2 border-background shrink-0 z-10"
-                          style={{
-                            backgroundColor:
-                              CORES_TIPO_PARADA[parada.tipo] || "#6b7280",
-                          }}
-                        />
-                        <div className="flex-1 bg-card rounded-lg border p-3 hover:shadow-sm transition-shadow">
-                          <div className="flex items-start justify-between gap-2">
-                            <p className="font-heading font-medium text-sm truncate">
-                              {parada.nome}
-                            </p>
-                            <Badge variant="outline" className="text-[10px] shrink-0">
-                              {TIPO_PARADA_LABELS[parada.tipo]}
-                            </Badge>
-                          </div>
-                          {parada.endereco && (
-                            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                              <MapPin className="h-3 w-3 shrink-0" />
-                              <span className="truncate">{parada.endereco}</span>
-                            </p>
-                          )}
-                          <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground">
-                            {(parada.horarioInicio || parada.horarioFim) && (
-                              <span className="flex items-center gap-1 bg-muted/50 px-2 py-0.5 rounded-full">
-                                <Clock className="h-3 w-3" />
-                                {parada.horarioInicio || "?"} -{" "}
-                                {parada.horarioFim || "?"}
-                              </span>
+                          key={parada.id}
+                          className="relative flex items-start gap-3 py-3 group"
+                        >
+                          <div
+                            className="absolute left-[-23px] top-[18px] w-3 h-3 rounded-full border-2 border-background shrink-0 z-10"
+                            style={{
+                              backgroundColor:
+                                CORES_TIPO_PARADA[parada.tipo] || "#6b7280",
+                            }}
+                          />
+                          <div className="flex-1 bg-card rounded-lg border p-3 hover:shadow-sm transition-shadow">
+                            <div className="flex items-start justify-between gap-2">
+                              <p className="font-heading font-medium text-sm truncate">
+                                {parada.nome}
+                              </p>
+                              <Badge variant="outline" className="text-[10px] shrink-0">
+                                {TIPO_PARADA_LABELS[parada.tipo]}
+                              </Badge>
+                            </div>
+                            {parada.endereco && (
+                              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                                <MapPin className="h-3 w-3 shrink-0" />
+                                <span className="truncate">{parada.endereco}</span>
+                              </p>
+                            )}
+                            <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground">
+                              {(parada.horarioInicio || parada.horarioFim) && (
+                                <span className="flex items-center gap-1 bg-muted/50 px-2 py-0.5 rounded-full">
+                                  <Clock className="h-3 w-3" />
+                                  {parada.horarioInicio || "?"} -{" "}
+                                  {parada.horarioFim || "?"}
+                                </span>
+                              )}
+                            </div>
+                            {parada.notas && (
+                              <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">
+                                {parada.notas}
+                              </p>
                             )}
                           </div>
-                          {parada.notas && (
-                            <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">
-                              {parada.notas}
-                            </p>
-                          )}
+                          <button
+                            className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive shrink-0 mt-1 p-1 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                            onClick={() => removerParada(dia.id, parada.id)}
+                            aria-label={`Remover ${parada.nome}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
                         </div>
-                        <button
-                          className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive shrink-0 mt-1 p-1 min-w-[44px] min-h-[44px] flex items-center justify-center"
-                          onClick={() => removerParada(dia.id, parada.id)}
-                          aria-label={`Remover ${parada.nome}`}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
+
+        {/* Map */}
+        {mapaAtivo && (
+          <div className="flex-1 min-h-[300px] md:min-h-0">
+            <MapaRoteiro
+              paradas={todasParadas}
+              onMapClick={(lat, lng) => {
+                setParadaForm({
+                  ...paradaForm,
+                  lat,
+                  lng,
+                  nome: "",
+                  endereco: "",
+                });
+                setModalAberto(true);
+              }}
+            />
+          </div>
+        )}
       </div>
 
       {/* Add stop dialog */}
@@ -327,6 +355,21 @@ export default function RoteiroEditorPage() {
             <DialogTitle>Adicionar Parada</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Buscar lugar</Label>
+              <BuscaLugares
+                onSelect={(place) =>
+                  setParadaForm({
+                    ...paradaForm,
+                    placeId: place.placeId,
+                    nome: place.nome,
+                    endereco: place.endereco,
+                    lat: place.lat,
+                    lng: place.lng,
+                  })
+                }
+              />
+            </div>
             <div className="space-y-2">
               <Label>Nome do lugar</Label>
               <Input
@@ -410,5 +453,6 @@ export default function RoteiroEditorPage() {
         </DialogContent>
       </Dialog>
     </div>
+    </GoogleMapsProvider>
   );
 }
