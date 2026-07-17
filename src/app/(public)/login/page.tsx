@@ -1,24 +1,41 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { MapPin, LogIn } from "lucide-react";
+import { MapPin, LogIn, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/components/auth/auth-provider";
 
 export default function LoginPage() {
-  const { user, loading, loginGoogle, loginAnonimo } = useAuth();
+  const { user, loading, loginGoogle, loginAnonimo, loginEmail, cadastrarEmail } = useAuth();
   const router = useRouter();
+  const [modoCadastro, setModoCadastro] = useState(false);
+  const [email, setEmail] = useState("");
+  const [senha, setSenha] = useState("");
+  const [enviando, setEnviando] = useState(false);
+  const [erroEmail, setErroEmail] = useState<string | null>(null);
+
+  async function handleEmailSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (enviando) return;
+    setErroEmail(null);
+    setEnviando(true);
+    try {
+      if (modoCadastro) {
+        await cadastrarEmail(email, senha);
+      } else {
+        await loginEmail(email, senha);
+      }
+    } catch (err: any) {
+      setErroEmail(err?.message || "Não foi possível entrar. Tente novamente.");
+      setEnviando(false);
+    }
+  }
 
   useEffect(() => {
     if (user && !loading) {
@@ -28,9 +45,9 @@ export default function LoginPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-primary/10 via-background to-cta/5">
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-cta flex items-center justify-center shadow-lg shadow-primary/25 animate-pulse">
-          <MapPin className="h-8 w-8 text-white" />
+      <div className="flex items-center justify-center min-h-screen bg-paper bg-grain">
+        <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center shadow-lg shadow-primary/25 animate-pulse">
+          <MapPin className="h-8 w-8 text-primary-foreground" />
         </div>
       </div>
     );
@@ -39,34 +56,31 @@ export default function LoginPage() {
   if (user) return null;
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen px-4 relative overflow-hidden">
-      {/* Background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-cta/5" />
-
-      {/* Decorative blobs */}
-      <div className="absolute top-[-100px] right-[-100px] w-[300px] h-[300px] rounded-full bg-primary/10 blur-3xl" />
-      <div className="absolute bottom-[-80px] left-[-80px] w-[250px] h-[250px] rounded-full bg-cta/10 blur-3xl" />
-
-      <div className="relative z-10 w-full max-w-sm">
+    <div className="flex flex-col items-center justify-center min-h-screen px-4 relative overflow-hidden bg-paper bg-grain">
+      <div className="relative z-10 w-full max-w-sm animate-in fade-in slide-in-from-bottom-2 duration-300">
         {/* Brand */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-cta flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary/25">
-            <MapPin className="h-8 w-8 text-white" />
-          </div>
-          <h1 className="font-heading text-2xl font-bold">Destino Certo</h1>
-          <p className="text-muted-foreground text-sm mt-1">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 font-heading font-semibold text-2xl tracking-tight italic text-paper-foreground"
+          >
+            <MapPin className="h-6 w-6 text-primary not-italic" />
+            <span>Destino Certo</span>
+          </Link>
+          <p className="text-paper-foreground/60 text-sm mt-1">
             Seu planejador de viagens
           </p>
         </div>
 
-        <Card className="shadow-xl border-0">
-          <CardHeader className="text-center pb-2">
-            <CardTitle className="font-heading text-lg">Entrar</CardTitle>
-            <CardDescription>
+        <Card className="shadow-xl border-border/70 py-0 gap-0 overflow-hidden">
+          <div className="bg-primary text-primary-foreground px-6 py-4 ticket-notch-bottom text-center">
+            <p className="font-heading text-lg font-medium">Entrar</p>
+            <p className="text-xs text-primary-foreground/75">
               Crie e compartilhe roteiros de viagem
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
+            </p>
+          </div>
+          <div className="border-t-2 border-dashed border-border/80 mt-2" />
+          <CardContent className="space-y-3 py-4">
             <Button
               className="w-full"
               size="lg"
@@ -100,9 +114,72 @@ export default function LoginPage() {
               <Separator className="flex-1" />
             </div>
 
+            <form onSubmit={handleEmailSubmit} className="space-y-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="email" className="sr-only">
+                  E-mail
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="seu@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  autoComplete="email"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="senha" className="sr-only">
+                  Senha
+                </Label>
+                <Input
+                  id="senha"
+                  type="password"
+                  placeholder="Senha"
+                  value={senha}
+                  onChange={(e) => setSenha(e.target.value)}
+                  minLength={6}
+                  required
+                  autoComplete={modoCadastro ? "new-password" : "current-password"}
+                />
+              </div>
+              {erroEmail && (
+                <p className="text-xs text-destructive">{erroEmail}</p>
+              )}
+              <Button
+                type="submit"
+                className="w-full"
+                variant="outline"
+                size="lg"
+                disabled={enviando}
+              >
+                {enviando && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                {modoCadastro ? "Criar conta" : "Entrar com e-mail"}
+              </Button>
+              <button
+                type="button"
+                onClick={() => {
+                  setModoCadastro(!modoCadastro);
+                  setErroEmail(null);
+                }}
+                className="w-full text-center text-xs text-muted-foreground hover:text-foreground"
+              >
+                {modoCadastro
+                  ? "Já tem conta? Entrar"
+                  : "Não tem conta? Criar uma"}
+              </button>
+            </form>
+
+            <div className="flex items-center gap-3">
+              <Separator className="flex-1" />
+              <span className="text-xs text-muted-foreground">ou</span>
+              <Separator className="flex-1" />
+            </div>
+
             <Button
               className="w-full"
-              variant="outline"
+              variant="ghost"
               size="lg"
               onClick={loginAnonimo}
               disabled={loading}

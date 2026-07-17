@@ -11,6 +11,8 @@ import {
   onAuthChange,
   signInWithGoogle,
   signInAnonymously,
+  signInWithEmail,
+  signUpWithEmail,
   signOut,
 } from "@/lib/firebase/auth";
 import type { User } from "firebase/auth";
@@ -20,6 +22,8 @@ interface AuthContextType {
   loading: boolean;
   loginGoogle: () => Promise<void>;
   loginAnonimo: () => Promise<void>;
+  loginEmail: (email: string, senha: string) => Promise<void>;
+  cadastrarEmail: (email: string, senha: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -28,8 +32,29 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   loginGoogle: async () => {},
   loginAnonimo: async () => {},
+  loginEmail: async () => {},
+  cadastrarEmail: async () => {},
   logout: async () => {},
 });
+
+function mensagemErroAuth(err: any): string {
+  switch (err?.code) {
+    case "auth/email-already-in-use":
+      return "Esse e-mail já tem uma conta. Tente entrar em vez de criar uma nova.";
+    case "auth/invalid-credential":
+    case "auth/wrong-password":
+    case "auth/user-not-found":
+      return "E-mail ou senha incorretos.";
+    case "auth/weak-password":
+      return "A senha precisa ter pelo menos 6 caracteres.";
+    case "auth/invalid-email":
+      return "Digite um e-mail válido.";
+    case "auth/too-many-requests":
+      return "Muitas tentativas. Aguarde um momento e tente de novo.";
+    default:
+      return "Não foi possível entrar. Verifique seus dados e tente novamente.";
+  }
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -64,6 +89,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const loginEmail = async (email: string, senha: string) => {
+    try {
+      const u = await signInWithEmail(email, senha);
+      setUser(u);
+    } catch (err: any) {
+      throw new Error(mensagemErroAuth(err));
+    }
+  };
+
+  const cadastrarEmail = async (email: string, senha: string) => {
+    try {
+      const u = await signUpWithEmail(email, senha);
+      setUser(u);
+    } catch (err: any) {
+      throw new Error(mensagemErroAuth(err));
+    }
+  };
+
   const logout = async () => {
     try {
       await signOut();
@@ -76,7 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, loginGoogle, loginAnonimo, logout }}
+      value={{ user, loading, loginGoogle, loginAnonimo, loginEmail, cadastrarEmail, logout }}
     >
       {children}
     </AuthContext.Provider>

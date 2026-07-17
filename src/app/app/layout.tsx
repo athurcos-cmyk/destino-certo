@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { MapPin, Plus, User, Menu } from "lucide-react";
+import { MapPin, Plus, User, Menu, Sun, Moon } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -16,6 +16,7 @@ import { LoadingScreen } from "@/components/shared/loading-screen";
 import { OnlineStatus } from "@/components/shared/online-status";
 import { SyncProvider } from "@/components/shared/sync-provider";
 import { useAuth } from "@/components/auth/auth-provider";
+import { useTheme } from "@/components/shared/theme-provider";
 
 const navItems = [
   { href: "/app", label: "Roteiros", icon: MapPin },
@@ -25,6 +26,7 @@ const navItems = [
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, loading, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -55,9 +57,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <div className="p-4 border-b">
           <Link
             href="/app"
-            className="flex items-center gap-2 font-heading font-bold text-lg"
+            className="flex items-center gap-2 font-heading font-semibold text-lg italic"
           >
-            <MapPin className="h-5 w-5 text-sky-500" />
+            <MapPin className="h-5 w-5 text-primary not-italic" />
             <span>Destino Certo</span>
           </Link>
         </div>
@@ -103,6 +105,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <DropdownMenuItem onClick={() => router.push("/app/configuracoes")}>
                 Configurações
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={toggleTheme}>
+                {theme === "dark" ? (
+                  <Sun className="h-4 w-4 mr-2" />
+                ) : (
+                  <Moon className="h-4 w-4 mr-2" />
+                )}
+                {theme === "dark" ? "Modo claro" : "Modo escuro"}
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={logout}>Sair</DropdownMenuItem>
             </DropdownMenuContent>
@@ -114,8 +124,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Mobile header */}
         <header className="md:hidden flex items-center justify-between h-14 px-4 border-b bg-background">
-          <Link href="/app" className="flex items-center gap-2 font-heading font-bold">
-            <MapPin className="h-5 w-5 text-sky-500" />
+          <Link href="/app" className="flex items-center gap-2 font-heading font-semibold italic">
+            <MapPin className="h-5 w-5 text-primary not-italic" />
             <span>Destino Certo</span>
           </Link>
           <DropdownMenu>
@@ -132,6 +142,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   {item.label}
                 </DropdownMenuItem>
               ))}
+              <DropdownMenuItem onClick={toggleTheme}>
+                {theme === "dark" ? (
+                  <Sun className="h-4 w-4 mr-2" />
+                ) : (
+                  <Moon className="h-4 w-4 mr-2" />
+                )}
+                {theme === "dark" ? "Modo claro" : "Modo escuro"}
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={logout}>Sair</DropdownMenuItem>
             </DropdownMenuContent>

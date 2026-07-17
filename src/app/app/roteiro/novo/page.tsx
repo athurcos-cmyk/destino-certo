@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +12,8 @@ import { addDocument } from "@/lib/firebase/firestore";
 import { toast } from "sonner";
 import { useAuth } from "@/components/auth/auth-provider";
 import { gerarDiasEntreDatas } from "@/lib/utils/formatar-data";
+import { GoogleMapsProvider } from "@/lib/google-maps/config";
+import { BuscaLugares } from "@/components/mapa/busca-lugares";
 import type { RoteiroFormData } from "@/lib/types/roteiro";
 
 export default function NovoRoteiroPage() {
@@ -29,6 +31,11 @@ export default function NovoRoteiroPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!user || saving) return;
+
+    if (!form.destino) {
+      toast.error("Busque e selecione um destino.");
+      return;
+    }
 
     if (form.dataFim < form.dataInicio) {
       toast.error("A data de fim deve ser posterior à data de início.");
@@ -49,11 +56,19 @@ export default function NovoRoteiroPage() {
         titulo: form.titulo,
         descricao: form.descricao,
         destino: form.destino,
+        ...(form.destinoLat !== undefined && { destinoLat: form.destinoLat }),
+        ...(form.destinoLng !== undefined && { destinoLng: form.destinoLng }),
+        ...(form.destinoPaisCodigo !== undefined && {
+          destinoPaisCodigo: form.destinoPaisCodigo,
+        }),
+        ...(form.destinoPaisNome !== undefined && {
+          destinoPaisNome: form.destinoPaisNome,
+        }),
         imagemCapa: null,
         dataInicio: form.dataInicio,
         dataFim: form.dataFim,
         donoId: user.uid,
-        colaboradores: [],
+        colaboradoresEmail: [],
         slugCompartilhamento: null,
         compartilhamentoAtivo: false,
       });
@@ -78,7 +93,8 @@ export default function NovoRoteiroPage() {
   }
 
   return (
-    <div className="p-6 max-w-lg mx-auto">
+    <GoogleMapsProvider>
+    <div className="p-6 max-w-lg mx-auto animate-in fade-in slide-in-from-bottom-2 duration-300">
       <button
         onClick={() => router.back()}
         className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6"
@@ -108,15 +124,42 @@ export default function NovoRoteiroPage() {
 
             <div className="space-y-2">
               <Label htmlFor="destino">Destino</Label>
-              <Input
-                id="destino"
-                placeholder="Ex: Curitiba, PR"
-                value={form.destino}
-                onChange={(e) =>
-                  setForm({ ...form, destino: e.target.value })
-                }
-                required
-              />
+              {form.destino ? (
+                <div className="flex items-center justify-between gap-2 rounded-lg border bg-muted/50 px-3 py-2.5 text-sm">
+                  <span className="truncate">{form.destino}</span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setForm({
+                        ...form,
+                        destino: "",
+                        destinoLat: undefined,
+                        destinoLng: undefined,
+                        destinoPaisCodigo: undefined,
+                        destinoPaisNome: undefined,
+                      })
+                    }
+                    className="text-muted-foreground hover:text-foreground shrink-0 min-w-[32px] min-h-[32px] flex items-center justify-center"
+                    aria-label="Trocar destino"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <BuscaLugares
+                  placeholder="Ex: Curitiba, PR"
+                  onSelect={(place) =>
+                    setForm({
+                      ...form,
+                      destino: place.nome,
+                      destinoLat: place.lat,
+                      destinoLng: place.lng,
+                      destinoPaisCodigo: place.paisCodigo,
+                      destinoPaisNome: place.paisNome,
+                    })
+                  }
+                />
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -173,5 +216,6 @@ export default function NovoRoteiroPage() {
         </CardContent>
       </Card>
     </div>
+    </GoogleMapsProvider>
   );
 }

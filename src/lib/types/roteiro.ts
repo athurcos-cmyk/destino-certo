@@ -12,11 +12,15 @@ export interface Roteiro {
   titulo: string;
   descricao: string;
   destino: string;
+  destinoLat?: number;
+  destinoLng?: number;
+  destinoPaisCodigo?: string;
+  destinoPaisNome?: string;
   imagemCapa: string | null;
   dataInicio: Timestamp;
   dataFim: Timestamp;
   donoId: string;
-  colaboradores: string[];
+  colaboradoresEmail: string[];
   slugCompartilhamento: string | null;
   compartilhamentoAtivo: boolean;
   criadoEm: Timestamp;
@@ -50,6 +54,10 @@ export interface RoteiroFormData {
   titulo: string;
   descricao: string;
   destino: string;
+  destinoLat?: number;
+  destinoLng?: number;
+  destinoPaisCodigo?: string;
+  destinoPaisNome?: string;
   dataInicio: Date;
   dataFim: Date;
 }

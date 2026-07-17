@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { ArrowLeft, LogOut } from "lucide-react";
+import { ArrowLeft, LogOut, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -12,9 +12,11 @@ import {
 } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/components/auth/auth-provider";
+import { useTheme } from "@/components/shared/theme-provider";
 
 export default function ConfiguracoesPage() {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const router = useRouter();
 
   if (!user) return null;
@@ -29,7 +31,7 @@ export default function ConfiguracoesPage() {
     : user.email?.slice(0, 2).toUpperCase() || "?";
 
   return (
-    <div className="p-6 max-w-lg mx-auto">
+    <div className="p-6 max-w-lg mx-auto animate-in fade-in slide-in-from-bottom-2 duration-300">
       <button
         onClick={() => router.back()}
         className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6"
@@ -64,6 +66,39 @@ export default function ConfiguracoesPage() {
               </p>
             )}
           </div>
+        </CardContent>
+      </Card>
+
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Aparência</CardTitle>
+          <CardDescription>Como o app deve ser exibido</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <button
+            onClick={toggleTheme}
+            className="flex items-center justify-between w-full min-h-[44px]"
+          >
+            <span className="flex items-center gap-2 text-sm">
+              {theme === "dark" ? (
+                <Moon className="h-4 w-4" />
+              ) : (
+                <Sun className="h-4 w-4" />
+              )}
+              Modo escuro
+            </span>
+            <span
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                theme === "dark" ? "bg-primary" : "bg-muted"
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  theme === "dark" ? "translate-x-6" : "translate-x-1"
+                }`}
+              />
+            </span>
+          </button>
         </CardContent>
       </Card>
 

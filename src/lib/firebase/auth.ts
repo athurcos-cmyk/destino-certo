@@ -5,6 +5,8 @@ import {
   type User,
   GoogleAuthProvider,
   signInAnonymously as firebaseSignInAnonymously,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
 } from "firebase/auth";
 import { getAuthInstance } from "./config";
 
@@ -19,6 +21,18 @@ export async function signInWithGoogle(): Promise<User> {
 export async function signInAnonymously(): Promise<User> {
   const auth = getAuthInstance();
   const result = await firebaseSignInAnonymously(auth);
+  return result.user;
+}
+
+export async function signInWithEmail(email: string, senha: string): Promise<User> {
+  const auth = getAuthInstance();
+  const result = await signInWithEmailAndPassword(auth, email, senha);
+  return result.user;
+}
+
+export async function signUpWithEmail(email: string, senha: string): Promise<User> {
+  const auth = getAuthInstance();
+  const result = await createUserWithEmailAndPassword(auth, email, senha);
   return result.user;
 }
 

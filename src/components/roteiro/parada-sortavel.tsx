@@ -10,11 +10,12 @@ import type { Parada } from "@/lib/types/roteiro";
 interface ParadaSortavelProps {
   parada: Parada;
   diaId: string;
+  idx?: number;
   onEdit: (diaId: string, parada: Parada) => void;
   onDelete: (diaId: string, paradaId: string) => void;
 }
 
-export function ParadaSortavel({ parada, diaId, onEdit, onDelete }: ParadaSortavelProps) {
+export function ParadaSortavel({ parada, diaId, idx = 0, onEdit, onDelete }: ParadaSortavelProps) {
   const {
     attributes,
     listeners,
@@ -28,23 +29,25 @@ export function ParadaSortavel({ parada, diaId, onEdit, onDelete }: ParadaSortav
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
+    animationDelay: `${Math.min(idx, 8) * 40}ms`,
+    animationFillMode: "backwards" as const,
   };
 
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className="relative flex items-start gap-3 py-3 group"
+      className="relative flex items-start gap-3 py-1.5 group animate-in fade-in slide-in-from-bottom-2"
     >
       <div
         {...attributes}
         {...listeners}
-        className="absolute left-[-23px] top-[18px] w-3 h-3 rounded-full border-2 border-background shrink-0 z-10 cursor-grab active:cursor-grabbing"
+        className="absolute left-[-23px] top-[14px] w-3 h-3 rounded-full border-2 border-background shrink-0 z-10 cursor-grab active:cursor-grabbing"
         style={{
           backgroundColor: CORES_TIPO_PARADA[parada.tipo] || "#6b7280",
         }}
       />
-      <div className="flex-1 bg-card rounded-lg border p-3 hover:shadow-sm transition-shadow">
+      <div className="flex-1 bg-card rounded-lg border p-2.5 hover:shadow-sm transition-shadow min-w-0 leading-tight">
         <div className="flex items-start justify-between gap-2">
           <p className="font-heading font-medium text-sm truncate">
             {parada.nome}
@@ -53,27 +56,29 @@ export function ParadaSortavel({ parada, diaId, onEdit, onDelete }: ParadaSortav
             {TIPO_PARADA_LABELS[parada.tipo]}
           </Badge>
         </div>
-        {parada.endereco && (
-          <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-            <MapPin className="h-3 w-3 shrink-0" />
-            <span className="truncate">{parada.endereco}</span>
-          </p>
+        {(parada.endereco || parada.horarioInicio || parada.horarioFim) && (
+          <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground min-w-0">
+            {parada.endereco && (
+              <span className="flex items-center gap-1 min-w-0 flex-1">
+                <MapPin className="h-3 w-3 shrink-0" />
+                <span className="truncate">{parada.endereco}</span>
+              </span>
+            )}
+            {(parada.horarioInicio || parada.horarioFim) && (
+              <span className="flex items-center gap-1 shrink-0">
+                <Clock className="h-3 w-3" />
+                {parada.horarioInicio || "?"} - {parada.horarioFim || "?"}
+              </span>
+            )}
+          </div>
         )}
-        <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground">
-          {(parada.horarioInicio || parada.horarioFim) && (
-            <span className="flex items-center gap-1 bg-muted/50 px-2 py-0.5 rounded-full">
-              <Clock className="h-3 w-3" />
-              {parada.horarioInicio || "?"} - {parada.horarioFim || "?"}
-            </span>
-          )}
-        </div>
         {parada.notas && (
-          <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">
+          <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
             {parada.notas}
           </p>
         )}
       </div>
-      <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+      <div className="flex flex-col gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity shrink-0">
         <button
           className="text-muted-foreground hover:text-primary p-1 min-w-[44px] min-h-[44px] flex items-center justify-center"
           onClick={() => onEdit(diaId, parada)}

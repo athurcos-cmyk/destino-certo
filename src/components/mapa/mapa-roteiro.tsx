@@ -38,20 +38,25 @@ export function MapaRoteiro({ paradas, centro, onMapClick }: MapaRoteiroProps) {
         }
       }}
     >
-      {paradas.map((parada) => (
+      {paradas.map((parada, idx) => (
         <AdvancedMarker
           key={parada.id}
           position={{ lat: parada.localizacao.lat, lng: parada.localizacao.lng }}
           title={parada.nome}
         >
           <div
-            className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-md border-2 border-white -translate-x-1/2 -translate-y-1/2"
-            style={{
-              backgroundColor:
-                CORES_TIPO_PARADA[parada.tipo] || "#6b7280",
-            }}
+            className="animate-marker-drop"
+            style={{ animationDelay: `${Math.min(idx, 10) * 30}ms` }}
           >
-            {parada.horarioInicio?.split(":")[0] || "?"}
+            <div
+              className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-md border-2 border-white -translate-x-1/2 -translate-y-1/2"
+              style={{
+                backgroundColor:
+                  CORES_TIPO_PARADA[parada.tipo] || "#6b7280",
+              }}
+            >
+              {parada.horarioInicio?.split(":")[0] || "?"}
+            </div>
           </div>
         </AdvancedMarker>
       ))}

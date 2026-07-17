@@ -40,6 +40,8 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-paper: var(--paper);
+  --color-paper-foreground: var(--paper-foreground);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -85,6 +87,8 @@
   --sidebar-accent-foreground: oklch(0.35 0.065 236.6);
   --sidebar-border: oklch(0.91 0.02 236.6);
   --sidebar-ring: oklch(0.685 0.175 236.6);
+  --paper: oklch(0.965 0.02 75);
+  --paper-foreground: oklch(0.35 0.045 60);
 }
 
 .dark {
@@ -121,22 +125,97 @@
   --sidebar-accent-foreground: oklch(0.95 0.01 240);
   --sidebar-border: oklch(1 0 0 / 12%);
   --sidebar-ring: oklch(0.685 0.175 236.6);
+  --paper: oklch(0.26 0.025 60);
+  --paper-foreground: oklch(0.92 0.02 75);
 }
 
-/* Aurora gradient animation */
-@keyframes aurora {
-  0%, 100% {
-    transform: translate(0, 0) scale(1);
-    opacity: 0.7;
+/* Marker drop-in animation (map pins) */
+@keyframes marker-drop {
+  0% {
+    transform: translateY(-16px) scale(0.5);
+    opacity: 0;
   }
-  33% {
-    transform: translate(30px, -20px) scale(1.05);
-    opacity: 0.9;
+  60% {
+    transform: translateY(2px) scale(1.05);
+    opacity: 1;
   }
-  66% {
-    transform: translate(-20px, 10px) scale(0.95);
-    opacity: 0.6;
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
   }
+}
+
+.animate-marker-drop {
+  animation: marker-drop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+}
+
+/* Grain texture — sensação de "diário de viagem" em vez de superfície digital lisa */
+.bg-grain {
+  position: relative;
+}
+.bg-grain::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.dark .bg-grain::before {
+  opacity: 0.08;
+  mix-blend-mode: overlay;
+}
+
+/* Rota tracejada — conector de timeline em estilo "trajeto de viagem" */
+.route-dashed {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    var(--border) 0,
+    var(--border) 5px,
+    transparent 5px,
+    transparent 11px
+  );
+}
+
+/* Recorte de bilhete/boarding pass — semicírculos nas laterais */
+.ticket-notch {
+  --notch: 10px;
+  -webkit-mask-image: radial-gradient(
+      circle at 0 50%,
+      transparent var(--notch),
+      black calc(var(--notch) + 0.5px)
+    ),
+    radial-gradient(circle at 100% 50%, transparent var(--notch), black calc(var(--notch) + 0.5px));
+  -webkit-mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-image: radial-gradient(circle at 0 50%, transparent var(--notch), black calc(var(--notch) + 0.5px)),
+    radial-gradient(circle at 100% 50%, transparent var(--notch), black calc(var(--notch) + 0.5px));
+  mask-size: 100% 100%;
+  mask-repeat: no-repeat;
+}
+
+/* Divisor tracejado vertical — separa o "canhoto" do corpo do bilhete */
+.ticket-divider {
+  border-left: 2px dashed var(--border);
+}
+
+/* Variante do recorte de bilhete p/ borda inferior — usada em headers de card
+   pra criar a "costura" entre o cabeçalho e o corpo */
+.ticket-notch-bottom {
+  --notch: 8px;
+  -webkit-mask-image: radial-gradient(
+      circle at 0 100%,
+      transparent var(--notch),
+      black calc(var(--notch) + 0.5px)
+    ),
+    radial-gradient(circle at 100% 100%, transparent var(--notch), black calc(var(--notch) + 0.5px));
+  -webkit-mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-image: radial-gradient(circle at 0 100%, transparent var(--notch), black calc(var(--notch) + 0.5px)),
+    radial-gradient(circle at 100% 100%, transparent var(--notch), black calc(var(--notch) + 0.5px));
+  mask-size: 100% 100%;
+  mask-repeat: no-repeat;
 }
 
 @layer base {

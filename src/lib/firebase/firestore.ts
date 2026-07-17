@@ -71,4 +71,27 @@ export async function deleteDocument(docPath: string): Promise<void> {
   await deleteDoc(doc(await db(), docPath));
 }
 
+export async function excluirRoteiroCompleto(roteiroId: string): Promise<void> {
+  // Apaga o documento principal primeiro (é o que aparece nas listas) para que
+  // o cache local reflita a remoção imediatamente, antes de limpar o resto.
+  deleteDocument(`roteiros/${roteiroId}`).catch((err) =>
+    console.error("Erro ao excluir roteiro:", err)
+  );
+
+  const dias = await getCollection<{ id: string }>(`roteiros/${roteiroId}/dias`);
+  for (const dia of dias) {
+    const paradas = await getCollection<{ id: string }>(
+      `roteiros/${roteiroId}/dias/${dia.id}/paradas`
+    );
+    for (const parada of paradas) {
+      deleteDocument(`roteiros/${roteiroId}/dias/${dia.id}/paradas/${parada.id}`).catch(
+        (err) => console.error("Erro ao excluir parada:", err)
+      );
+    }
+    deleteDocument(`roteiros/${roteiroId}/dias/${dia.id}`).catch((err) =>
+      console.error("Erro ao excluir dia:", err)
+    );
+  }
+}
+
 export { Timestamp, where, orderBy, query };

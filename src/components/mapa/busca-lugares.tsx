@@ -3,7 +3,7 @@
 import { useRef, useState, useEffect } from "react";
 import { useMapsLibrary } from "@vis.gl/react-google-maps";
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { Search, Loader2 } from "lucide-react";
 
 interface PlaceResult {
   placeId: string;
@@ -11,18 +11,29 @@ interface PlaceResult {
   endereco: string;
   lat: number;
   lng: number;
+  paisCodigo?: string;
+  paisNome?: string;
+}
+
+interface SuggestionItem {
+  placeId: string;
+  nome: string;
+  endereco: string;
+  prediction: google.maps.places.PlacePrediction;
 }
 
 interface BuscaLugaresProps {
   onSelect: (place: PlaceResult) => void;
+  placeholder?: string;
 }
 
-export function BuscaLugares({ onSelect }: BuscaLugaresProps) {
+export function BuscaLugares({ onSelect, placeholder = "Buscar lugar..." }: BuscaLugaresProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const places = useMapsLibrary("places");
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<PlaceResult[]>([]);
+  const [results, setResults] = useState<SuggestionItem[]>([]);
   const [open, setOpen] = useState(false);
+  const [buscando, setBuscando] = useState(false);
 
   useEffect(() => {
     if (!places || !query.trim()) {
@@ -31,77 +42,85 @@ export function BuscaLugares({ onSelect }: BuscaLugaresProps) {
     }
 
     const timer = setTimeout(async () => {
+      setBuscando(true);
       try {
-        const autocompleteService =
-          new places.AutocompleteService();
-        const res = await autocompleteService.getPlacePredictions({
-          input: query,
-          language: "pt-BR",
-          types: ["establishment", "geocode"],
-        });
+        const { suggestions } =
+          await places.AutocompleteSuggestion.fetchAutocompleteSuggestions({
+            input: query,
+            language: "pt-BR",
+            region: "br",
+          });
 
-        const mapped: PlaceResult[] = (
-          res.predictions || []
-        ).map((p) => ({
-          placeId: p.place_id,
-          nome: p.structured_formatting?.main_text || p.description,
-          endereco:
-            p.structured_formatting?.secondary_text || "",
-          lat: 0,
-          lng: 0,
-        }));
+        const mapped: SuggestionItem[] = suggestions
+          .filter((s) => s.placePrediction)
+          .map((s) => {
+            const p = s.placePrediction!;
+            return {
+              placeId: p.placeId,
+              nome: p.mainText?.text ?? p.text.text,
+              endereco: p.secondaryText?.text ?? "",
+              prediction: p,
+            };
+          });
         setResults(mapped);
         setOpen(mapped.length > 0);
-      } catch {
+      } catch (err) {
+        console.error("Erro ao buscar lugares:", err);
         setResults([]);
+      } finally {
+        setBuscando(false);
       }
     }, 300);
 
     return () => clearTimeout(timer);
   }, [query, places]);
 
-  async function handleSelect(result: PlaceResult) {
-    if (!places) return;
+  async function handleSelect(item: SuggestionItem) {
+    setQuery("");
+    setResults([]);
+    setOpen(false);
+
     try {
-      const geocoder = new places.PlacesService(
-        document.createElement("div")
+      const place = item.prediction.toPlace();
+      await place.fetchFields({
+        fields: ["location", "formattedAddress", "displayName", "addressComponents"],
+      });
+      const paisComponent = place.addressComponents?.find((c) =>
+        c.types.includes("country")
       );
-      geocoder.getDetails(
-        { placeId: result.placeId, fields: ["geometry"] },
-        (place, status) => {
-          if (
-            status === google.maps.places.PlacesServiceStatus.OK &&
-            place?.geometry?.location
-          ) {
-            onSelect({
-              ...result,
-              lat: place.geometry.location.lat(),
-              lng: place.geometry.location.lng(),
-            });
-          } else {
-            onSelect(result);
-          }
-          setQuery("");
-          setResults([]);
-          setOpen(false);
-        }
-      );
-    } catch {
-      onSelect(result);
-      setQuery("");
-      setResults([]);
-      setOpen(false);
+      onSelect({
+        placeId: item.placeId,
+        nome: place.displayName || item.nome,
+        endereco: place.formattedAddress || item.endereco,
+        lat: place.location?.lat() ?? 0,
+        lng: place.location?.lng() ?? 0,
+        paisCodigo: paisComponent?.shortText ?? undefined,
+        paisNome: paisComponent?.longText ?? undefined,
+      });
+    } catch (err) {
+      console.error("Erro ao obter detalhes do lugar:", err);
+      onSelect({
+        placeId: item.placeId,
+        nome: item.nome,
+        endereco: item.endereco,
+        lat: 0,
+        lng: 0,
+      });
     }
   }
 
   return (
     <div className="relative">
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        {buscando ? (
+          <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground animate-spin" />
+        ) : (
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        )}
         <Input
           ref={inputRef}
           className="pl-9"
-          placeholder="Buscar lugar..."
+          placeholder={placeholder}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => results.length > 0 && setOpen(true)}
@@ -113,6 +132,7 @@ export function BuscaLugares({ onSelect }: BuscaLugaresProps) {
           {results.map((r) => (
             <button
               key={r.placeId}
+              type="button"
               className="w-full text-left px-4 py-2.5 hover:bg-muted transition-colors text-sm"
               onMouseDown={() => handleSelect(r)}
             >

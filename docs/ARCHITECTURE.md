@@ -9,7 +9,7 @@ PWA mobile-first para criar, organizar e compartilhar itinerários de viagem. O 
 | Camada | Tecnologia | Justificativa |
 |--------|-----------|---------------|
 | Framework | Next.js 16 (App Router) | Vercel nativo, RSC, PWA |
-| Auth | Firebase Auth | Google + Anônimo |
+| Auth | Firebase Auth | Google + E-mail/senha + Anônimo |
 | Database | Firestore Web SDK | Offline persistence nativa via IndexedDB |
 | Mapas | @vis.gl/react-google-maps | Wrapper oficial Google |
 | UI | Tailwind v4 + shadcn/ui | Utility-first, themeável |
@@ -89,7 +89,8 @@ O service worker (`public/sw.js`) usa `skipWaiting()` + `clients.claim()`. Ao de
   titulo, descricao, destino, imagemCapa
   dataInicio, dataFim
   donoId
-  slugCompartilhamento, compartilhamentoAtivo
+  colaboradoresEmail: string[]  // e-mails com permissão de edição
+  slugCompartilhamento, compartilhamentoAtivo  // link público view-only
   criadoEm, atualizadoEm
 
 /roteiros/{roteiroId}/dias/{diaId}

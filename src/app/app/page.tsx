@@ -2,20 +2,47 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import { Plus, MapPin, Calendar, ExternalLink, AlertCircle, RefreshCw } from "lucide-react";
+import {
+  Plus,
+  MapPin,
+  Calendar,
+  ExternalLink,
+  AlertCircle,
+  RefreshCw,
+  Users,
+  MoreVertical,
+  Trash2,
+  Plane,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { EmptyState } from "@/components/shared/empty-state";
+import { ExcluirRoteiroDialog } from "@/components/roteiro/excluir-roteiro-dialog";
 import { useAuth } from "@/components/auth/auth-provider";
 import { getCollection, where } from "@/lib/firebase/firestore";
 import type { Roteiro } from "@/lib/types/roteiro";
 import { formatarData } from "@/lib/utils/formatar-data";
 
+function ordenarPorAtualizacao(data: Roteiro[]) {
+  return [...data].sort((a, b) => {
+    const aTime = a.atualizadoEm?.toMillis?.() ?? 0;
+    const bTime = b.atualizadoEm?.toMillis?.() ?? 0;
+    return bTime - aTime;
+  });
+}
+
 export default function DashboardPage() {
   const { user } = useAuth();
   const [roteiros, setRoteiros] = useState<Roteiro[]>([]);
+  const [roteirosCompartilhados, setRoteirosCompartilhados] = useState<Roteiro[]>([]);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -28,13 +55,17 @@ export default function DashboardPage() {
         "roteiros",
         where("donoId", "==", user.uid)
       );
-      // Sort client-side to avoid composite index requirement
-      data.sort((a, b) => {
-        const aTime = a.atualizadoEm?.toMillis?.() ?? 0;
-        const bTime = b.atualizadoEm?.toMillis?.() ?? 0;
-        return bTime - aTime;
-      });
-      setRoteiros(data);
+      setRoteiros(ordenarPorAtualizacao(data));
+
+      if (user.email) {
+        const compartilhados = await getCollection<Roteiro>(
+          "roteiros",
+          where("colaboradoresEmail", "array-contains", user.email)
+        );
+        setRoteirosCompartilhados(ordenarPorAtualizacao(compartilhados));
+      } else {
+        setRoteirosCompartilhados([]);
+      }
     } catch (err: any) {
       console.error("Erro ao carregar roteiros:", err);
       setErro(
@@ -117,7 +148,7 @@ export default function DashboardPage() {
         </Link>
       </div>
 
-      {roteiros.length === 0 ? (
+      {roteiros.length === 0 && roteirosCompartilhados.length === 0 ? (
         <EmptyState
           icon={
             <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
@@ -136,60 +167,142 @@ export default function DashboardPage() {
           }
         />
       ) : (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {roteiros.map((r, idx) => (
-            <div
-              key={r.id}
-              className="animate-in fade-in slide-in-from-bottom-4"
-              style={{
-                animationDelay: `${idx * 80}ms`,
-                animationFillMode: "backwards",
-              }}
-            >
-              <Link href={`/app/roteiro/${r.id}`}>
-                <Card className="group hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer h-full overflow-hidden">
-                  <div className="h-1.5 w-full bg-gradient-to-r from-primary to-cta" />
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between mb-3">
-                      <h3 className="font-heading font-semibold truncate flex-1 mr-2 text-[15px]">
-                        {r.titulo}
-                      </h3>
-                      {r.compartilhamentoAtivo && (
-                        <Badge variant="secondary" className="shrink-0 text-[10px]">
-                          <ExternalLink className="h-3 w-3 mr-1" />
-                          Compartilhado
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="space-y-2 text-[13px] text-muted-foreground">
-                      <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                          <MapPin className="h-3.5 w-3.5 text-primary" />
-                        </div>
-                        <span className="truncate">{r.destino}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-full bg-cta/10 flex items-center justify-center shrink-0">
-                          <Calendar className="h-3.5 w-3.5 text-cta" />
-                        </div>
-                        <span>
-                          {formatarData(r.dataInicio.toDate())} -{" "}
-                          {formatarData(r.dataFim.toDate())}
-                        </span>
-                      </div>
-                    </div>
-                    {r.descricao && (
-                      <p className="text-[13px] text-muted-foreground mt-3 line-clamp-2 leading-relaxed">
-                        {r.descricao}
-                      </p>
-                    )}
-                  </CardContent>
-                </Card>
-              </Link>
+        <>
+          {roteiros.length > 0 && (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {roteiros.map((r, idx) => (
+                <RoteiroCard
+                  key={r.id}
+                  roteiro={r}
+                  idx={idx}
+                  onExcluido={() =>
+                    setRoteiros((prev) => prev.filter((x) => x.id !== r.id))
+                  }
+                />
+              ))}
             </div>
-          ))}
+          )}
+
+          {roteirosCompartilhados.length > 0 && (
+            <div className={roteiros.length > 0 ? "mt-8" : ""}>
+              <h2 className="text-sm font-semibold text-muted-foreground mb-3">
+                Compartilhados comigo
+              </h2>
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {roteirosCompartilhados.map((r, idx) => (
+                  <RoteiroCard key={r.id} roteiro={r} idx={idx} colaborador />
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+function RoteiroCard({
+  roteiro: r,
+  idx,
+  colaborador,
+  onExcluido,
+}: {
+  roteiro: Roteiro;
+  idx: number;
+  colaborador?: boolean;
+  onExcluido?: () => void;
+}) {
+  const [excluirAberto, setExcluirAberto] = useState(false);
+
+  return (
+    <div
+      className="animate-in fade-in slide-in-from-bottom-4 relative"
+      style={{
+        animationDelay: `${idx * 80}ms`,
+        animationFillMode: "backwards",
+      }}
+    >
+      {!colaborador && onExcluido && (
+        <div className="absolute top-3 right-3 z-10">
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              className="min-w-[32px] min-h-[32px] rounded-md bg-background/80 backdrop-blur flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-background transition-colors"
+              aria-label="Mais opções"
+            >
+              <MoreVertical className="h-4 w-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <DropdownMenuItem
+                variant="destructive"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setExcluirAberto(true);
+                }}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Excluir roteiro
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <ExcluirRoteiroDialog
+            roteiroId={r.id}
+            roteiroTitulo={r.titulo}
+            open={excluirAberto}
+            onOpenChange={setExcluirAberto}
+            onExcluido={onExcluido}
+          />
         </div>
       )}
+      <Link href={`/app/roteiro/${r.id}`}>
+        <Card className="group hover:shadow-lg hover:-translate-y-1 transition-all duration-200 cursor-pointer h-full overflow-hidden py-0 gap-0 border-border/70">
+          {/* Canhoto do bilhete */}
+          <div className="relative bg-primary text-primary-foreground px-4 py-3 ticket-notch-bottom">
+            <p className="text-[10px] uppercase tracking-[0.15em] opacity-75">Destino</p>
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="font-heading font-medium truncate text-lg">{r.titulo}</h3>
+              <Plane className="h-4 w-4 opacity-70 shrink-0 rotate-45" />
+            </div>
+          </div>
+          <div className="border-t-2 border-dashed border-border/80 mt-2" />
+
+          <CardContent className="p-4 pt-3">
+            <div className="flex items-start justify-between mb-2 gap-2">
+              <span className="flex items-center gap-1.5 text-sm text-muted-foreground min-w-0">
+                <MapPin className="h-3.5 w-3.5 text-primary shrink-0" />
+                <span className="truncate">{r.destino}</span>
+              </span>
+              {colaborador ? (
+                <Badge variant="secondary" className="shrink-0 text-[10px]">
+                  <Users className="h-3 w-3 mr-1" />
+                  Colaborador
+                </Badge>
+              ) : (
+                r.compartilhamentoAtivo && (
+                  <Badge variant="secondary" className="shrink-0 text-[10px]">
+                    <ExternalLink className="h-3 w-3 mr-1" />
+                    Compartilhado
+                  </Badge>
+                )
+              )}
+            </div>
+            <div className="flex items-center gap-1.5 text-[13px] text-muted-foreground">
+              <Calendar className="h-3.5 w-3.5 text-cta shrink-0" />
+              <span>
+                {formatarData(r.dataInicio.toDate())} -{" "}
+                {formatarData(r.dataFim.toDate())}
+              </span>
+            </div>
+            {r.descricao && (
+              <p className="text-[13px] text-muted-foreground mt-3 line-clamp-2 leading-relaxed">
+                {r.descricao}
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      </Link>
     </div>
   );
 }

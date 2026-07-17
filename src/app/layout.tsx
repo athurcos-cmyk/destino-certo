@@ -1,16 +1,19 @@
 import type { Metadata, Viewport } from "next";
-import { Outfit, Work_Sans } from "next/font/google";
+import { Fraunces, Work_Sans } from "next/font/google";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/components/auth/auth-provider";
 import { QueryProvider } from "@/components/shared/query-provider";
+import { ThemeProvider } from "@/components/shared/theme-provider";
 import { PwaRegister } from "@/components/shared/pwa-register";
 import { Toaster } from "sonner";
 import "./globals.css";
 
-const outfit = Outfit({
+const fraunces = Fraunces({
   variable: "--font-heading",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
+  weight: "variable",
+  style: ["normal", "italic"],
+  axes: ["opsz", "SOFT", "WONK"],
 });
 
 const workSans = Work_Sans({
@@ -50,13 +53,28 @@ export default function RootLayout({
   return (
     <html
       lang="pt-BR"
-      className={`${outfit.variable} ${workSans.variable} h-full antialiased`}
+      className={`${fraunces.variable} ${workSans.variable} h-full antialiased`}
       suppressHydrationWarning
     >
+      <head>
+        <script
+          // Aplica o tema salvo antes da hidratação, evitando flash de tema errado
+          dangerouslySetInnerHTML={{
+            __html: `try {
+              var t = localStorage.getItem('theme');
+              if (t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+              }
+            } catch (e) {}`,
+          }}
+        />
+      </head>
       <body className="min-h-full flex flex-col">
         <QueryProvider>
           <AuthProvider>
-            <TooltipProvider>{children}</TooltipProvider>
+            <ThemeProvider>
+              <TooltipProvider>{children}</TooltipProvider>
+            </ThemeProvider>
           </AuthProvider>
         </QueryProvider>
         <PwaRegister />

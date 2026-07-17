@@ -1,63 +1,86 @@
 import Link from "next/link";
-import { MapPin, Calendar, Share2, Sparkles } from "lucide-react";
+import {
+  MapPin,
+  Calendar,
+  Share2,
+  Compass,
+  Plane,
+  Stamp,
+  ArrowRight,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const features = [
+const manifesto = [
   {
-    icon: MapPin,
-    title: "Mapa Interativo",
+    icon: Compass,
+    title: "Mapa interativo",
     description:
-      "Visualize todos os lugares do seu roteiro no mapa. Busque por restaurantes, atrações e muito mais.",
+      "Busque lugares de verdade no Google Maps e veja cada parada do roteiro no mapa, colorida por tipo.",
+    code: "01",
   },
   {
     icon: Calendar,
-    title: "Roteiro Dia a Dia",
+    title: "Dia a dia, arrastando",
     description:
-      "Organize sua viagem dia por dia, com horários para cada parada. Simples como arrastar e soltar.",
+      "Organize a viagem em dias com horários. Reordene arrastando — sem planilha, sem Word.",
+    code: "02",
   },
   {
     icon: Share2,
-    title: "Compartilhe com Todos",
+    title: "Compartilhe de verdade",
     description:
-      "Gere um link e compartilhe o roteiro com família e amigos. Eles visualizam sem precisar criar conta.",
+      "Link público pra quem só quer ver, ou convide alguém pra editar o roteiro junto com você.",
+    code: "03",
   },
   {
-    icon: Sparkles,
-    title: "Assistente com IA",
+    icon: Stamp,
+    title: "Contexto automático",
     description:
-      "Não sabe o que visitar? A IA pesquisa lugares incríveis e até sugere roteiros completos para você.",
+      "Foto e resumo do destino, previsão do tempo, câmbio e feriados locais — tudo puxado sozinho.",
+    code: "04",
   },
 ];
+
+const roteiroExemplo = [
+  { hora: "09:00", local: "Cristo Redentor", tipo: "atracao" as const },
+  { hora: "13:00", local: "Confeitaria Colombo", tipo: "restaurante" as const },
+  { hora: "19:00", local: "Pôr do sol no Arpoador", tipo: "atracao" as const },
+];
+
+const CORES: Record<string, string> = {
+  atracao: "#3b82f6",
+  restaurante: "#f59e0b",
+};
 
 const steps = [
   {
     number: "1",
-    title: "Crie seu roteiro",
-    description: "Defina o destino e as datas da viagem.",
+    title: "Crie o roteiro",
+    description: "Destino, datas — pronto, os dias já aparecem.",
   },
   {
     number: "2",
-    title: "Adicione lugares",
-    description: "Busque no mapa e monte seu dia a dia.",
+    title: "Monte o dia a dia",
+    description: "Busque lugares e arraste pra ordem certa.",
   },
   {
     number: "3",
-    title: "Compartilhe o link",
-    description: "Envie para quem quiser e pronto!",
+    title: "Carimbe e compartilhe",
+    description: "Link público ou convite pra editar junto.",
   },
 ];
 
 export default function LandingPage() {
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="sticky top-0 z-50 border-b border-border/60 bg-background/90 backdrop-blur">
         <div className="container mx-auto flex h-16 items-center justify-between px-4 max-w-6xl">
           <Link
             href="/"
-            className="flex items-center gap-2 font-heading font-bold text-xl tracking-tight"
+            className="flex items-center gap-2 font-heading font-semibold text-xl tracking-tight italic"
           >
-            <MapPin className="h-6 w-6 text-sky-500" />
+            <MapPin className="h-6 w-6 text-primary not-italic" />
             <span>Destino Certo</span>
           </Link>
           <div className="flex items-center gap-3">
@@ -76,85 +99,127 @@ export default function LandingPage() {
       </header>
 
       <main className="flex-1">
-        {/* Hero com Aurora gradient */}
-        <section className="relative overflow-hidden py-24 md:py-36 px-4">
-          <div className="absolute inset-0 -z-10" aria-hidden="true">
-            <div className="absolute top-0 -left-40 w-[600px] h-[600px] rounded-full bg-gradient-to-br from-sky-300/40 via-sky-200/20 to-transparent blur-3xl animate-[aurora_12s_ease-in-out_infinite]" />
-            <div className="absolute bottom-0 -right-40 w-[500px] h-[500px] rounded-full bg-gradient-to-tl from-orange-300/25 via-amber-200/15 to-transparent blur-3xl animate-[aurora_10s_ease-in-out_infinite_reverse]" />
-            <div className="absolute top-1/2 left-1/3 w-[400px] h-[400px] rounded-full bg-gradient-to-r from-emerald-300/20 via-teal-200/10 to-transparent blur-3xl animate-[aurora_14s_ease-in-out_infinite]" />
-          </div>
+        {/* Hero */}
+        <section className="relative bg-paper text-paper-foreground bg-grain overflow-hidden">
+          <div className="container mx-auto max-w-6xl px-4 py-20 md:py-28 grid lg:grid-cols-[1.1fr_0.9fr] gap-16 items-center">
+            <div>
+              <span className="inline-flex items-center gap-2 text-xs font-medium tracking-[0.2em] uppercase text-primary mb-6">
+                <Plane className="h-3.5 w-3.5" />
+                Itinerário de viagem
+              </span>
+              <h1 className="font-heading text-5xl md:text-7xl font-medium leading-[0.95] tracking-tight mb-6">
+                Sua viagem,
+                <br />
+                <em className="italic font-normal text-primary">organizada</em>{" "}
+                de verdade.
+              </h1>
+              <p className="text-lg md:text-xl text-paper-foreground/70 max-w-lg mb-10 leading-relaxed">
+                Chega de roteiro perdido no Word. Monte dia a dia com mapa,
+                arraste pra reordenar, e compartilhe com quem for junto.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Link href="/login">
+                  <Button
+                    size="lg"
+                    className="text-base px-8 bg-cta text-cta-foreground hover:bg-cta/90 shadow-lg shadow-cta/25 w-full sm:w-auto"
+                  >
+                    Criar roteiro grátis
+                    <ArrowRight className="h-4 w-4 ml-1" />
+                  </Button>
+                </Link>
+                <Link href="/login">
+                  <Button size="lg" variant="outline" className="text-base px-8 w-full sm:w-auto">
+                    Entrar com Google
+                  </Button>
+                </Link>
+              </div>
+            </div>
 
-          <div className="container mx-auto max-w-6xl text-center">
-            <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6">
-              Seu roteiro de viagem
-              <br />
-              <span className="text-primary">organizado e compartilhável</span>
-            </h1>
-            <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10">
-              Chega de fazer roteiro no Word. Crie itinerários dia a dia com
-              mapa interativo, arraste e solte, e compartilhe com um link.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/login">
-                <Button
-                  size="lg"
-                  className="text-base px-8 bg-cta text-cta-foreground hover:bg-cta/90 shadow-lg shadow-cta/25"
-                >
-                  Criar Roteiro Grátis
-                </Button>
-              </Link>
-              <Link href="/login">
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="text-base px-8"
-                >
-                  Entrar com Google
-                </Button>
-              </Link>
+            {/* Decorative boarding pass */}
+            <div
+              className="relative bg-card text-card-foreground rounded-2xl shadow-2xl shadow-black/10 ticket-notch overflow-hidden rotate-2 hover:rotate-0 transition-transform duration-500 mx-auto w-full max-w-sm"
+              aria-hidden="true"
+            >
+              <div className="px-6 py-5 bg-primary text-primary-foreground flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.2em] opacity-80">Destino</p>
+                  <p className="font-heading text-xl font-medium">Rio de Janeiro</p>
+                </div>
+                <Stamp className="h-8 w-8 opacity-70" />
+              </div>
+              <div className="px-6 py-2">
+                <div className="h-0 border-t-2 border-dashed border-border" />
+              </div>
+              <ul className="px-6 py-5 space-y-4">
+                {roteiroExemplo.map((item) => (
+                  <li key={item.local} className="flex items-center gap-3">
+                    <span
+                      className="h-2.5 w-2.5 rounded-full shrink-0"
+                      style={{ backgroundColor: CORES[item.tipo] }}
+                    />
+                    <span className="text-xs font-medium text-muted-foreground w-11 shrink-0">
+                      {item.hora}
+                    </span>
+                    <span className="text-sm truncate">{item.local}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
         </section>
 
-        {/* Features com glassmorphism */}
-        <section className="py-20 bg-muted/50 px-4">
+        {/* Manifesto / features */}
+        <section className="py-24 px-4">
           <div className="container mx-auto max-w-6xl">
-            <h2 className="text-3xl font-bold text-center mb-12">
-              Por que usar o Destino Certo?
-            </h2>
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {features.map((f) => (
-                <div
-                  key={f.title}
-                  className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-sky-100 hover:shadow-lg hover:shadow-sky-100/50 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer"
-                >
-                  <div className="w-10 h-10 bg-gradient-to-br from-sky-400 to-sky-500 rounded-lg flex items-center justify-center mb-4 shadow-sm shadow-sky-400/20">
-                    <f.icon className="h-5 w-5 text-white" />
+            <div className="max-w-xl mb-16">
+              <span className="text-xs font-medium tracking-[0.2em] uppercase text-primary">
+                O que você leva na bagagem
+              </span>
+              <h2 className="font-heading text-3xl md:text-4xl font-medium tracking-tight mt-3">
+                Tudo que um roteiro precisa, nada que ele não precisa.
+              </h2>
+            </div>
+            <div className="grid md:grid-cols-2 gap-x-12 gap-y-10">
+              {manifesto.map((f) => (
+                <div key={f.title} className="flex gap-5">
+                  <div className="shrink-0">
+                    <span className="font-heading text-3xl text-primary/30 font-medium">
+                      {f.code}
+                    </span>
                   </div>
-                  <h3 className="font-semibold mb-2">{f.title}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {f.description}
-                  </p>
+                  <div>
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <f.icon className="h-4 w-4 text-cta" />
+                      <h3 className="font-heading font-medium text-lg">{f.title}</h3>
+                    </div>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {f.description}
+                    </p>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* How it works com círculos gradientes */}
-        <section className="py-20 px-4">
+        {/* Como funciona */}
+        <section className="py-24 px-4 bg-muted/40 border-y border-border/60">
           <div className="container mx-auto max-w-6xl">
-            <h2 className="text-3xl font-bold text-center mb-12">
-              Como funciona
+            <h2 className="font-heading text-3xl md:text-4xl font-medium tracking-tight text-center mb-16">
+              Três carimbos até a viagem pronta
             </h2>
-            <div className="grid md:grid-cols-3 gap-8">
+            <div className="relative grid md:grid-cols-3 gap-12">
+              <div
+                className="hidden md:block absolute top-8 left-[16.5%] right-[16.5%] h-px route-dashed"
+                aria-hidden="true"
+              />
               {steps.map((s) => (
-                <div key={s.number} className="text-center">
-                  <div className="w-12 h-12 bg-gradient-to-br from-sky-400 to-sky-600 text-white rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4 shadow-md shadow-sky-400/25">
-                    {s.number}
+                <div key={s.number} className="relative text-center">
+                  <div className="relative z-10 w-16 h-16 mx-auto mb-5 rounded-full border-2 border-primary text-primary flex items-center justify-center bg-background -rotate-6">
+                    <span className="font-heading text-2xl font-medium">{s.number}</span>
                   </div>
-                  <h3 className="font-semibold mb-2">{s.title}</h3>
-                  <p className="text-sm text-muted-foreground">
+                  <h3 className="font-heading font-medium text-lg mb-2">{s.title}</h3>
+                  <p className="text-sm text-muted-foreground max-w-[220px] mx-auto">
                     {s.description}
                   </p>
                 </div>
@@ -163,33 +228,36 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* CTA com gradiente */}
-        <section className="py-20 bg-gradient-to-br from-sky-500 to-sky-600 px-4">
-          <div className="container mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-bold text-white mb-4">
-              Pronto para planejar sua próxima viagem?
-            </h2>
-            <p className="text-white/80 mb-8">
-              Crie sua conta gratuita e comece a montar roteiros incríveis.
-            </p>
-            <Link href="/login">
-              <Button
-                size="lg"
-                variant="secondary"
-                className="text-base px-8 bg-white text-sky-700 hover:bg-white/90 shadow-lg"
-              >
-                Começar Agora
-              </Button>
-            </Link>
+        {/* CTA */}
+        <section className="py-24 px-4">
+          <div className="container mx-auto max-w-4xl">
+            <div className="relative bg-primary text-primary-foreground rounded-3xl ticket-notch bg-grain px-8 py-16 md:py-20 text-center overflow-hidden">
+              <h2 className="font-heading text-3xl md:text-5xl font-medium tracking-tight mb-4">
+                Próxima parada: <em className="italic font-normal">sua viagem</em>
+              </h2>
+              <p className="text-primary-foreground/80 mb-8 max-w-md mx-auto">
+                Grátis pra criar. Sem cartão, sem instalar nada — funciona até
+                offline.
+              </p>
+              <Link href="/login">
+                <Button
+                  size="lg"
+                  variant="secondary"
+                  className="text-base px-8 bg-white text-primary hover:bg-white/90 shadow-lg"
+                >
+                  Começar agora
+                </Button>
+              </Link>
+            </div>
           </div>
         </section>
       </main>
 
       {/* Footer */}
-      <footer className="border-t py-8 px-4">
+      <footer className="border-t border-border/60 py-8 px-4">
         <div className="container mx-auto max-w-6xl flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
-          <div className="flex items-center gap-2 font-heading font-medium">
-            <MapPin className="h-4 w-4 text-sky-500" />
+          <div className="flex items-center gap-2 font-heading font-medium italic">
+            <MapPin className="h-4 w-4 text-primary not-italic" />
             <span>Destino Certo</span>
           </div>
           <p>Feito para viajantes que gostam de organização.</p>
