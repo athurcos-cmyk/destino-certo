@@ -20,13 +20,13 @@ export default function NovoRoteiroPage() {
   const { user } = useAuth();
   const router = useRouter();
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState<RoteiroFormData>({
+  const [form, setForm] = useState<RoteiroFormData>(() => ({
     titulo: "",
     descricao: "",
     destino: "",
     dataInicio: new Date(),
     dataFim: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
-  });
+  }));
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -139,7 +139,7 @@ export default function NovoRoteiroPage() {
                         destinoPaisNome: undefined,
                       })
                     }
-                    className="text-muted-foreground hover:text-foreground shrink-0 min-w-[32px] min-h-[32px] flex items-center justify-center"
+                    className="text-muted-foreground hover:text-foreground shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center"
                     aria-label="Trocar destino"
                   >
                     <X className="h-4 w-4" />

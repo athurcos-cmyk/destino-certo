@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-07-16 (cont. 3) — Auditoria final do redesign
+
+- **Bug real corrigido:** o mapa do editor nunca centralizava no destino do roteiro (sempre abria em Curitiba) — havia até um cálculo de `bounds` (área cobrindo todas as paradas) pronto no código mas nunca aplicado. Agora o mapa centra no destino real (`roteiro.destinoLat/Lng`) e se ajusta pra mostrar todas as paradas com 2+ paradas.
+- **Touch targets:** 3 botões (menu do card no dashboard, remover colaborador, trocar destino) estavam a 32px, abaixo da regra de 44px do design system — corrigidos. Isso expôs uma colisão visual entre o ícone decorativo de avião do card e o menu "..." maior; removido o ícone decorativo.
+- **Limpeza:** removidas 2 funções mortas (`col()`/`docRef()`, deprecadas e nunca chamadas), ~10 imports não usados, 2 tipos `any` trocados por tipos corretos, cores hex duplicadas na landing substituídas pela constante `CORES_TIPO_PARADA` já existente.
+- **Segurança:** revisão das `firestore.rules` (modelo dono/colaborador sólido, sem escalonamento de permissão) e confirmação de que nenhum segredo está no código-fonte ou no histórico do git.
+
 ## 2026-07-16 (cont. 2) — Prompt de instalação do PWA
 
 - Sheet "Instale o Destino Certo" (estilo cartão de embarque, consistente com o redesign) para incentivar a instalação como app: no Android/Chrome/desktop captura o `beforeinstallprompt` e mostra botão "Instalar agora"; no iOS Safari (que não dispara esse evento) mostra passo a passo manual (Compartilhar → Adicionar à Tela de Início). Não aparece se o app já estiver instalado (`display-mode: standalone`). Dispensa é permanente via localStorage. Inspirado na implementação do projeto Zerou, adaptado pro design system e componentes (`Sheet`) do Destino Certo.

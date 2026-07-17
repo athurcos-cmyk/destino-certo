@@ -12,7 +12,6 @@ import {
   Users,
   MoreVertical,
   Trash2,
-  Plane,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -226,7 +225,7 @@ function RoteiroCard({
         <div className="absolute top-3 right-3 z-10">
           <DropdownMenu>
             <DropdownMenuTrigger
-              className="min-w-[32px] min-h-[32px] rounded-md bg-background/80 backdrop-blur flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-background transition-colors"
+              className="min-w-[44px] min-h-[44px] rounded-md bg-background/80 backdrop-blur flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-background transition-colors"
               aria-label="Mais opções"
             >
               <MoreVertical className="h-4 w-4" />
@@ -261,10 +260,7 @@ function RoteiroCard({
           {/* Canhoto do bilhete */}
           <div className="relative bg-primary text-primary-foreground px-4 py-3 ticket-notch-bottom">
             <p className="text-[10px] uppercase tracking-[0.15em] opacity-75">Destino</p>
-            <div className="flex items-center justify-between gap-2">
-              <h3 className="font-heading font-medium truncate text-lg">{r.titulo}</h3>
-              <Plane className="h-4 w-4 opacity-70 shrink-0 rotate-45" />
-            </div>
+            <h3 className="font-heading font-medium truncate text-lg pr-10">{r.titulo}</h3>
           </div>
           <div className="border-t-2 border-dashed border-border/80 mt-2" />
 

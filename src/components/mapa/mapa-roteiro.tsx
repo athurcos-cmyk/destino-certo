@@ -1,6 +1,6 @@
 "use client";
 
-import { Map, AdvancedMarker, Pin } from "@vis.gl/react-google-maps";
+import { Map, AdvancedMarker } from "@vis.gl/react-google-maps";
 import type { Parada } from "@/lib/types/roteiro";
 import { CORES_TIPO_PARADA } from "@/lib/constants";
 
@@ -13,24 +13,28 @@ interface MapaRoteiroProps {
 export function MapaRoteiro({ paradas, centro, onMapClick }: MapaRoteiroProps) {
   const center = centro || { lat: -25.4284, lng: -49.2733 }; // Default: Curitiba
 
-  const bounds = paradas.length > 0
-    ? (() => {
-        const lats = paradas.map((p) => p.localizacao.lat);
-        const lngs = paradas.map((p) => p.localizacao.lng);
-        return {
-          north: Math.max(...lats),
-          south: Math.min(...lats),
-          east: Math.max(...lngs),
-          west: Math.min(...lngs),
-        };
-      })()
-    : undefined;
+  // Com 2+ paradas, enquadra o mapa pra mostrar todas de uma vez. Com 0 ou 1,
+  // usa center/zoom padrão (bounds de um único ponto não tem área).
+  const bounds =
+    paradas.length > 1
+      ? (() => {
+          const lats = paradas.map((p) => p.localizacao.lat);
+          const lngs = paradas.map((p) => p.localizacao.lng);
+          return {
+            north: Math.max(...lats),
+            south: Math.min(...lats),
+            east: Math.max(...lngs),
+            west: Math.min(...lngs),
+          };
+        })()
+      : undefined;
 
   return (
     <Map
       style={{ width: "100%", height: "100%" }}
       defaultCenter={center}
       defaultZoom={13}
+      defaultBounds={bounds ? { ...bounds, padding: 48 } : undefined}
       mapId="destino-certo-map"
       onClick={(e) => {
         if (e.detail.latLng && onMapClick) {

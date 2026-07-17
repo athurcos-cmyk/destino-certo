@@ -1,6 +1,6 @@
 "use client";
 
-import { addToQueue, getPendingItems, removeFromQueue, clearQueue } from "./sync-queue";
+import { addToQueue, getPendingItems, removeFromQueue } from "./sync-queue";
 import { addDocument, updateDocument, deleteDocument } from "@/lib/firebase/firestore";
 import { toast } from "sonner";
 

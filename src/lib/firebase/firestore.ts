@@ -19,14 +19,6 @@ async function db() {
   return getDbInstance();
 }
 
-export function col(path: string, ...pathSegments: string[]) {
-  throw new Error("col() is deprecated — use getCollection() instead");
-}
-
-export function docRef(path: string, ...pathSegments: string[]) {
-  throw new Error("docRef() is deprecated — use getDocument() instead");
-}
-
 export async function getDocument<T = DocumentData>(
   docPath: string,
   ...pathSegments: string[]

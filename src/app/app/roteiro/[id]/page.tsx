@@ -4,8 +4,6 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft,
-  MapPin,
-  Clock,
   Plus,
   Share2,
   Trash2,
@@ -31,7 +29,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   DropdownMenu,
@@ -46,6 +43,7 @@ import {
   TouchSensor,
   useSensor,
   useSensors,
+  type DragEndEvent,
 } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -67,12 +65,11 @@ import {
   addDocument,
   updateDocument,
   deleteDocument,
-  where,
   orderBy,
 } from "@/lib/firebase/firestore";
 import { gerarSlug } from "@/lib/utils/gerar-slug";
 import { formatarDataCurta } from "@/lib/utils/formatar-data";
-import { TIPO_PARADA_LABELS, CORES_TIPO_PARADA } from "@/lib/constants";
+import { TIPO_PARADA_LABELS } from "@/lib/constants";
 import type { Roteiro, Dia, Parada, ParadaFormData, TipoParada } from "@/lib/types/roteiro";
 import { toast } from "sonner";
 
@@ -241,7 +238,7 @@ export default function RoteiroEditorPage() {
     setModalAberto(true);
   }
 
-  async function handleDragEnd(diaId: string, event: any) {
+  async function handleDragEnd(diaId: string, event: DragEndEvent) {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
@@ -559,6 +556,11 @@ export default function RoteiroEditorPage() {
             </div>
             <MapaRoteiro
               paradas={todasParadas}
+              centro={
+                roteiro.destinoLat !== undefined && roteiro.destinoLng !== undefined
+                  ? { lat: roteiro.destinoLat, lng: roteiro.destinoLng }
+                  : undefined
+              }
               onMapClick={(lat, lng) => {
                 setParadaForm({
                   placeId: "",
@@ -803,7 +805,7 @@ export default function RoteiroEditorPage() {
                         <span className="truncate">{email}</span>
                         <button
                           onClick={() => removerColaborador(email)}
-                          className="text-muted-foreground hover:text-destructive shrink-0 min-w-[32px] min-h-[32px] flex items-center justify-center"
+                          className="text-muted-foreground hover:text-destructive shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center"
                           aria-label={`Remover ${email}`}
                         >
                           <X className="h-4 w-4" />

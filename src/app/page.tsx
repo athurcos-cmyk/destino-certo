@@ -9,6 +9,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { CORES_TIPO_PARADA } from "@/lib/constants";
 
 const manifesto = [
   {
@@ -46,11 +47,6 @@ const roteiroExemplo = [
   { hora: "13:00", local: "Confeitaria Colombo", tipo: "restaurante" as const },
   { hora: "19:00", local: "Pôr do sol no Arpoador", tipo: "atracao" as const },
 ];
-
-const CORES: Record<string, string> = {
-  atracao: "#3b82f6",
-  restaurante: "#f59e0b",
-};
 
 const steps = [
   {
@@ -155,7 +151,7 @@ export default function LandingPage() {
                   <li key={item.local} className="flex items-center gap-3">
                     <span
                       className="h-2.5 w-2.5 rounded-full shrink-0"
-                      style={{ backgroundColor: CORES[item.tipo] }}
+                      style={{ backgroundColor: CORES_TIPO_PARADA[item.tipo] }}
                     />
                     <span className="text-xs font-medium text-muted-foreground w-11 shrink-0">
                       {item.hora}
