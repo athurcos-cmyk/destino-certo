@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-07-16 (cont. 2) — Prompt de instalação do PWA
+
+- Sheet "Instale o Destino Certo" (estilo cartão de embarque, consistente com o redesign) para incentivar a instalação como app: no Android/Chrome/desktop captura o `beforeinstallprompt` e mostra botão "Instalar agora"; no iOS Safari (que não dispara esse evento) mostra passo a passo manual (Compartilhar → Adicionar à Tela de Início). Não aparece se o app já estiver instalado (`display-mode: standalone`). Dispensa é permanente via localStorage. Inspirado na implementação do projeto Zerou, adaptado pro design system e componentes (`Sheet`) do Destino Certo.
+
 ## 2026-07-16 (cont.) — Redesign completo ("Boarding Pass") + excluir roteiro + 3 features novas
 
 - **Redesign visual do app inteiro** via skill `/frontend-design`, direção "Boarding Pass / Diário de Viagem": fonte de heading trocada de Outfit para Fraunces (serifada), tokens novos `--paper`/`.bg-grain`/`.route-dashed`/`.ticket-notch`/`.ticket-notch-bottom` em `globals.css`. Landing page reconstruída do zero (removidos os blobs de gradiente e o card de glassmorphism genéricos) — e removida a seção "Assistente com IA" que anunciava uma feature que não existe mais desde a sessão anterior (bug de conteúdo). Cards do dashboard e headers de login/compartilhar público agora em formato de canhoto de bilhete.

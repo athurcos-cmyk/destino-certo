@@ -15,6 +15,7 @@ import {
 import { LoadingScreen } from "@/components/shared/loading-screen";
 import { OnlineStatus } from "@/components/shared/online-status";
 import { SyncProvider } from "@/components/shared/sync-provider";
+import { InstalarAppSheet } from "@/components/shared/instalar-app-sheet";
 import { useAuth } from "@/components/auth/auth-provider";
 import { useTheme } from "@/components/shared/theme-provider";
 
@@ -162,6 +163,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </main>
 
         <OnlineStatus />
+        <InstalarAppSheet />
 
         {/* Bottom nav - mobile */}
         <nav className="md:hidden relative flex items-center justify-around h-16 border-t bg-background pb-[env(safe-area-inset-bottom,0px)]">
