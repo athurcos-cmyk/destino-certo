@@ -58,11 +58,12 @@ export default function RootLayout({
     >
       <head>
         <script
-          // Aplica o tema salvo antes da hidratação, evitando flash de tema errado
+          // Aplica o tema salvo antes da hidratação, evitando flash de tema errado.
+          // Padrão é sempre claro — só fica escuro se a pessoa escolheu isso antes
+          // (não segue a preferência de sistema do navegador).
           dangerouslySetInnerHTML={{
             __html: `try {
-              var t = localStorage.getItem('theme');
-              if (t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+              if (localStorage.getItem('theme') === 'dark') {
                 document.documentElement.classList.add('dark');
               }
             } catch (e) {}`,

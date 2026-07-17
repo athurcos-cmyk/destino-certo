@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-07-16 (cont. 6) — App sempre abre no tema claro por padrão
+
+- Removida a detecção automática de `prefers-color-scheme` do sistema no script de tema (`layout.tsx`). Agora o app inteiro abre sempre claro por padrão, mesmo se o sistema/navegador da pessoa preferir escuro — só fica escuro se a pessoa clicar no toggle de dark mode, que continua salvando a escolha no localStorage normalmente.
+
 ## 2026-07-16 (cont. 5) — Landing sempre clara
 
 - A landing page (antes do login) agora ignora o dark mode e fica sempre no tema claro, mesmo se o sistema/navegador do visitante preferir escuro — padrão comum de manter a página de marketing só no tema de marca. O app em si (pós-login) continua respeitando dark mode normalmente. Implementado via classe `.force-light` em `globals.css` que redeclara os tokens de cor com os valores do tema claro, escopada só na landing.
