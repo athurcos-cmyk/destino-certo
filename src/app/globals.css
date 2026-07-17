@@ -91,6 +91,34 @@
   --paper-foreground: oklch(0.35 0.045 60);
 }
 
+/* Landing page é sempre clara — não segue o dark mode do resto do app,
+   mesmo que o navegador do visitante prefira tema escuro. */
+.force-light {
+  color-scheme: light;
+  --background: oklch(0.985 0.015 236.6);
+  --foreground: oklch(0.35 0.065 236.6);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.35 0.065 236.6);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.35 0.065 236.6);
+  --primary: oklch(0.685 0.175 236.6);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.76 0.14 236.6);
+  --secondary-foreground: oklch(0.35 0.065 236.6);
+  --muted: oklch(0.965 0.02 236.6);
+  --muted-foreground: oklch(0.5 0.04 236.6);
+  --accent: oklch(0.71 0.19 55.2);
+  --accent-foreground: oklch(1 0 0);
+  --cta: oklch(0.71 0.19 55.2);
+  --cta-foreground: oklch(1 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.91 0.02 236.6);
+  --input: oklch(0.91 0.02 236.6);
+  --ring: oklch(0.685 0.175 236.6);
+  --paper: oklch(0.965 0.02 75);
+  --paper-foreground: oklch(0.35 0.045 60);
+}
+
 .dark {
   --background: oklch(0.18 0.03 240);
   --foreground: oklch(0.95 0.01 240);

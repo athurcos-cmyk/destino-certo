@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-07-16 (cont. 5) — Landing sempre clara
+
+- A landing page (antes do login) agora ignora o dark mode e fica sempre no tema claro, mesmo se o sistema/navegador do visitante preferir escuro — padrão comum de manter a página de marketing só no tema de marca. O app em si (pós-login) continua respeitando dark mode normalmente. Implementado via classe `.force-light` em `globals.css` que redeclara os tokens de cor com os valores do tema claro, escopada só na landing.
+
+## 2026-07-16 (cont. 4) — Adicionar/editar/remover parada instantâneo
+
+- Causa da lentidão relatada pelo usuário: toda vez que adicionava, editava ou removia uma parada, o app recarregava o roteiro inteiro do Firestore (1 leitura do roteiro + 1 leitura por dia, sequenciais) antes de atualizar a tela — em vez de só refletir a mudança local, como o drag-and-drop já fazia corretamente.
+- Corrigido em `roteiro/[id]/page.tsx`: `salvarParada`/`removerParada` agora atualizam o estado local na hora (otimista) e escrevem no Firestore por trás, fire-and-forget. Parada nova aparece com um ID temporário, trocado pelo ID real assim que o Firestore confirma; se a escrita falhar de verdade, a mudança é revertida na tela com um toast de erro.
+
 ## 2026-07-16 (cont. 3) — Auditoria final do redesign
 
 - **Bug real corrigido:** o mapa do editor nunca centralizava no destino do roteiro (sempre abria em Curitiba) — havia até um cálculo de `bounds` (área cobrindo todas as paradas) pronto no código mas nunca aplicado. Agora o mapa centra no destino real (`roteiro.destinoLat/Lng`) e se ajusta pra mostrar todas as paradas com 2+ paradas.

@@ -66,6 +66,7 @@ import {
   updateDocument,
   deleteDocument,
   orderBy,
+  Timestamp,
 } from "@/lib/firebase/firestore";
 import { gerarSlug } from "@/lib/utils/gerar-slug";
 import { formatarDataCurta } from "@/lib/utils/formatar-data";
@@ -161,42 +162,72 @@ export default function RoteiroEditorPage() {
 
   function salvarParada() {
     if (!diaSelecionado || !paradaForm.nome) return;
+    const diaAlvo = diaSelecionado;
+
+    const dadosParada = {
+      placeId: paradaForm.placeId,
+      nome: paradaForm.nome,
+      endereco: paradaForm.endereco,
+      localizacao: { lat: paradaForm.lat, lng: paradaForm.lng },
+      tipo: paradaForm.tipo,
+      horarioInicio: paradaForm.horarioInicio || null,
+      horarioFim: paradaForm.horarioFim || null,
+      notas: paradaForm.notas,
+    };
 
     if (editandoParadaId) {
+      const paradaId = editandoParadaId;
       updateDocument(
-        `roteiros/${id}/dias/${diaSelecionado}/paradas/${editandoParadaId}`,
-        {
-          placeId: paradaForm.placeId,
-          nome: paradaForm.nome,
-          endereco: paradaForm.endereco,
-          localizacao: { lat: paradaForm.lat, lng: paradaForm.lng },
-          tipo: paradaForm.tipo,
-          horarioInicio: paradaForm.horarioInicio || null,
-          horarioFim: paradaForm.horarioFim || null,
-          notas: paradaForm.notas,
-        }
+        `roteiros/${id}/dias/${diaAlvo}/paradas/${paradaId}`,
+        dadosParada
       ).catch((err) => console.error("Erro ao atualizar parada:", err));
+
+      // Atualiza a tela na hora — não espera o Firestore responder pra refletir a mudança.
+      setParadas((prev) => ({
+        ...prev,
+        [diaAlvo]: (prev[diaAlvo] || []).map((p) =>
+          p.id === paradaId ? { ...p, ...dadosParada } : p
+        ),
+      }));
       toast.success("Parada atualizada!");
     } else {
-      addDocument(
-        `roteiros/${id}/dias/${diaSelecionado}/paradas`,
-        {
-          placeId: paradaForm.placeId,
-          nome: paradaForm.nome,
-          endereco: paradaForm.endereco,
-          localizacao: { lat: paradaForm.lat, lng: paradaForm.lng },
-          tipo: paradaForm.tipo,
-          horarioInicio: paradaForm.horarioInicio || null,
-          horarioFim: paradaForm.horarioFim || null,
-          notas: paradaForm.notas,
-          ordem: (paradas[diaSelecionado] || []).length,
-        }
-      ).catch((err) => console.error("Erro ao adicionar parada:", err));
+      const tempId = `temp-${Date.now()}`;
+      const ordem = (paradas[diaAlvo] || []).length;
+      const novaParada: Parada = {
+        id: tempId,
+        ...dadosParada,
+        ordem,
+        criadoEm: Timestamp.now(),
+      };
+
+      // Mostra a parada na tela imediatamente, com um ID temporário.
+      setParadas((prev) => ({
+        ...prev,
+        [diaAlvo]: [...(prev[diaAlvo] || []), novaParada],
+      }));
+
+      addDocument(`roteiros/${id}/dias/${diaAlvo}/paradas`, { ...dadosParada, ordem })
+        .then((realId) => {
+          // Troca o ID temporário pelo real assim que o Firestore confirma.
+          setParadas((prev) => ({
+            ...prev,
+            [diaAlvo]: (prev[diaAlvo] || []).map((p) =>
+              p.id === tempId ? { ...p, id: realId } : p
+            ),
+          }));
+        })
+        .catch((err) => {
+          console.error("Erro ao adicionar parada:", err);
+          setParadas((prev) => ({
+            ...prev,
+            [diaAlvo]: (prev[diaAlvo] || []).filter((p) => p.id !== tempId),
+          }));
+          toast.error("Não foi possível adicionar a parada. Tente novamente.");
+        });
       toast.success("Parada adicionada!");
     }
 
     resetForm();
-    carregarDados().catch(() => {});
   }
 
   function resetForm() {
@@ -262,9 +293,24 @@ export default function RoteiroEditorPage() {
   }
 
   function removerParada(diaId: string, paradaId: string) {
-    deleteDocument(`roteiros/${id}/dias/${diaId}/paradas/${paradaId}`)
-      .catch((err) => console.error("Erro ao remover parada:", err));
-    carregarDados().catch(() => {});
+    const paradaRemovida = (paradas[diaId] || []).find((p) => p.id === paradaId);
+
+    // Some da tela na hora; se o Firestore recusar, devolve o item.
+    setParadas((prev) => ({
+      ...prev,
+      [diaId]: (prev[diaId] || []).filter((p) => p.id !== paradaId),
+    }));
+
+    deleteDocument(`roteiros/${id}/dias/${diaId}/paradas/${paradaId}`).catch((err) => {
+      console.error("Erro ao remover parada:", err);
+      if (paradaRemovida) {
+        setParadas((prev) => ({
+          ...prev,
+          [diaId]: [...(prev[diaId] || []), paradaRemovida].sort((a, b) => a.ordem - b.ordem),
+        }));
+      }
+      toast.error("Não foi possível remover a parada. Tente novamente.");
+    });
     toast.success("Parada removida");
   }
 

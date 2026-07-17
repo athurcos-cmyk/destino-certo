@@ -68,7 +68,7 @@ const steps = [
 
 export default function LandingPage() {
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <div className="force-light flex flex-col min-h-screen bg-background text-foreground">
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-border/60 bg-background/90 backdrop-blur">
         <div className="container mx-auto flex h-16 items-center justify-between px-4 max-w-6xl">
