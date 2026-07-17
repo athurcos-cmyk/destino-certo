@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-07-16 (cont. 7) — Bug de layout no mobile (menu de baixo sobrepondo conteúdo)
+
+- Reportado pelo usuário testando no celular: ao rolar/interagir perto do menu de baixo, ele sobrepunha e cortava o conteúdo. Causa: o shell do app (`app/layout.tsx`) usava `h-screen` (`100vh` fixo) — no mobile, `100vh` é calculado pro tamanho máximo do viewport (com a barra de endereço do navegador escondida), então quando a barra aparece/some durante o scroll, o layout "pula" e o menu de baixo fica mal posicionado. Trocado por `h-dvh` (altura dinâmica de viewport), que se ajusta corretamente ao espaço realmente visível.
+
 ## 2026-07-16 (cont. 6) — App sempre abre no tema claro por padrão
 
 - Removida a detecção automática de `prefers-color-scheme` do sistema no script de tema (`layout.tsx`). Agora o app inteiro abre sempre claro por padrão, mesmo se o sistema/navegador da pessoa preferir escuro — só fica escuro se a pessoa clicar no toggle de dark mode, que continua salvando a escolha no localStorage normalmente.

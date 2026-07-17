@@ -52,7 +52,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <SyncProvider>
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-dvh overflow-hidden">
       {/* Sidebar - desktop */}
       <aside className="hidden md:flex w-64 flex-col border-r bg-muted/40">
         <div className="p-4 border-b">
